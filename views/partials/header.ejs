@@ -9,7 +9,17 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <a class="navbar-brand" href="/">Clothing Store</a>
+    <div class="ms-auto">
+        <% if (user) { %>
+            <span class="text-light me-3"><%= user.name %></span>
+            <form method="POST" action="/logout" class="d-inline">
+            <button class="btn btn-sm btn-outline-light">Log out</button>
+            </form>
+        <% } else { %>
+            <a href="/login" class="btn btn-sm btn-outline-light">Log in</a>
+            <a href="/register" class="btn btn-sm btn-light">Register</a>
+        <% } %>
+    </div>
   </div>
 </nav>
 <main class="container py-4">
