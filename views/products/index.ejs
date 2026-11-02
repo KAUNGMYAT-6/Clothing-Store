@@ -2,22 +2,64 @@
 
 <h1 class="mb-4">Products</h1>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-  <% products.forEach(product => { %>
-    <div class="col">
-      <a href="/products/<%= product.slug %>" class="text-decoration-none text-dark">
-        <div class="card h-100">
-          <img src="<%= product.image_url || 'https://placehold.co/600x800?text=No+Image' %>"
-               class="card-img-top" alt="<%= product.alt_text || product.name %>">
-          <div class="card-body">
-            <h5 class="card-title"><%= product.name %></h5>
-            <p class="text-muted small mb-1"><%= product.category %></p>
-            <p class="card-text fw-bold">$<%= product.price %></p>
+<form class="row g-2 mb-4" method="GET" action="/">
+  <div class="col-md-4">
+    <input type="text" name="q" class="form-control" placeholder="Search products"
+           value="<%= filters.q || '' %>">
+  </div>
+
+  <div class="col-md-3">
+    <select name="category" class="form-select">
+      <option value="">All categories</option>
+      <% categories.forEach(c => { %>
+        <option value="<%= c.id %>" <%= filters.category == c.id ? 'selected' : '' %>>
+          <%= c.name %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <select name="department" class="form-select">
+      <option value="">All departments</option>
+      <% ['men','women','unisex'].forEach(d => { %>
+        <option value="<%= d %>" <%= filters.department === d ? 'selected' : '' %>><%= d %></option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div class="col-md-2 d-grid">
+    <button class="btn btn-dark">Filter</button>
+  </div>
+</form>
+
+<% if (products.length === 0) { %>
+
+  <div class="alert alert-light border text-center py-5">
+    <p class="mb-2">No products match your filters.</p>
+    <a href="/" class="btn btn-sm btn-outline-dark">Clear filters</a>
+  </div>
+
+<% } else { %>
+
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    <% products.forEach(product => { %>
+      <div class="col">
+        <a href="/products/<%= product.slug %>" class="text-decoration-none text-dark">
+          <div class="card h-100">
+            <img src="<%= product.image_url || 'https://placehold.co/600x800?text=No+Image' %>"
+                 class="card-img-top" alt="<%= product.alt_text || product.name %>">
+            <div class="card-body">
+              <h5 class="card-title"><%= product.name %></h5>
+              <p class="text-muted small mb-1"><%= product.category %></p>
+              <p class="card-text fw-bold">$<%= product.price %></p>
+            </div>
           </div>
-        </div>
-      </a>
-    </div>
-  <% }) %>
-</div>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+
+<% } %>
 
 <%- include('../partials/footer') %>
