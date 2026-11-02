@@ -1,0 +1,44 @@
+<%- include('../partials/header') %>
+
+<div class="row">
+  <div class="col-md-6">
+    <% if (images.length) { %>
+      <img src="<%= images[0].image_url %>" class="img-fluid rounded mb-3"
+           alt="<%= images[0].alt_text || product.name %>">
+      <div class="row g-2">
+        <% images.slice(1).forEach(img => { %>
+          <div class="col-4">
+            <img src="<%= img.image_url %>" class="img-fluid rounded"
+                 alt="<%= img.alt_text || product.name %>">
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <img src="https://placehold.co/600x800?text=No+Image" class="img-fluid rounded"
+           alt="<%= product.name %>">
+    <% } %>
+  </div>
+
+  <div class="col-md-6">
+    <p class="text-muted mb-1"><%= product.category %> &middot; <%= product.department %></p>
+    <h1><%= product.name %></h1>
+    <p class="fs-3 fw-bold">$<%= product.price %></p>
+    <p><%= product.description %></p>
+
+    <h6 class="mt-4">Available options</h6>
+    <div class="list-group">
+      <% variants.forEach(v => { %>
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <span><%= v.color %> &middot; Size <%= v.size %></span>
+          <% if (v.stock_quantity > 0) { %>
+            <span class="badge bg-success"><%= v.stock_quantity %> in stock</span>
+          <% } else { %>
+            <span class="badge bg-secondary">Sold out</span>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
