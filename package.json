@@ -1,0 +1,22 @@
+{
+  "name": "clothing-store",
+  "version": "1.0.0",
+  "description": "E-commerce clothing store built with Node.js, Express and MySQL",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "KAUNG MYAT",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "mysql2": "^3.24.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
