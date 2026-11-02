@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('./db/pool');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const app = express();
@@ -10,6 +11,7 @@ const path = require('path');
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', async (req, res) => {
   try {
@@ -54,6 +56,47 @@ app.get('/', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Database error');
+  }
+});
+
+
+app.get('/register', (req, res) => {
+  res.render('auth/register', { title: 'Register', error: null });
+});
+
+app.post('/register', async (req, res) => {
+  const { name, email, password } = req.body;
+
+  try {
+    if (!name || !email || !password || password.length < 8) {
+      return res.status(400).render('auth/register', {
+        title: 'Register',
+        error: 'Please fill in all fields. Password must be at least 8 characters.'
+      });
+    }
+
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length) {
+      return res.status(400).render('auth/register', {
+        title: 'Register',
+        error: 'An account with that email already exists.'
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await pool.query(
+      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+      [name, email, passwordHash]
+    );
+
+    res.redirect('/login');
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('auth/register', {
+      title: 'Register',
+      error: 'Something went wrong. Please try again.'
+    });
   }
 });
 
