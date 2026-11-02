@@ -39,6 +39,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// ---------- Access control middleware ----------
+function requireLogin(req, res, next) {
+  if (!req.session.user) {
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.session.user) {
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).render('errors/403', { title: 'Forbidden' });
+  }
+  next();
+}
+
 // ---------- Product routes ----------
 app.get('/', async (req, res) => {
   try {
@@ -201,7 +221,9 @@ app.post('/login', async (req, res) => {
       role: user.role
     };
 
-    res.redirect('/');
+    const returnTo = req.session.returnTo || '/';
+    delete req.session.returnTo;
+    res.redirect(returnTo);
   } catch (err) {
     console.error(err);
     res.status(500).render('auth/login', {
@@ -213,6 +235,15 @@ app.post('/login', async (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
+});
+
+// ---------- Protected routes (placeholders for now) ----------
+app.get('/account', requireLogin, (req, res) => {
+  res.send(`Account page for ${req.session.user.name}`);
+});
+
+app.get('/admin', requireAdmin, (req, res) => {
+  res.send('Admin area');
 });
 
 // ---------- Start ----------
