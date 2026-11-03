@@ -97,7 +97,19 @@ router.post('/login', async (req, res) => {
 
     const returnTo = req.session.returnTo || '/';
     delete req.session.returnTo;
-    res.redirect(returnTo);
+
+    // Wait for the session to be written before redirecting, so the next
+    // request definitely sees the logged-in user
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save failed:', err);
+        return res.status(500).render('auth/login', {
+          title: 'Log in',
+          error: 'Something went wrong.'
+        });
+      }
+      res.redirect(returnTo);
+    });
   } catch (err) {
     console.error(err);
     res.status(500).render('auth/login', {
