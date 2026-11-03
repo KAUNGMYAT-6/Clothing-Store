@@ -58,6 +58,9 @@ app.use(async (req, res, next) => {
 app.use('/', productRoutes);
 app.use('/', authRoutes);
 
+const cartRoutes = require('./routes/cart');
+app.use('/', cartRoutes);
+
 app.get('/admin', requireAdmin, (req, res) => {
   res.send('Admin area');
 });

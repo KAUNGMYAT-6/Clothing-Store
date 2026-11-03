@@ -1,5 +1,7 @@
 <%- include('../partials/header') %>
 
+<a href="/" class="btn btn-sm btn-outline-dark mb-3">&larr; Back to products</a>
+
 <div class="row">
   <div class="col-md-6">
     <% if (images.length) { %>
@@ -25,19 +27,39 @@
     <p class="fs-3 fw-bold">$<%= product.price %></p>
     <p><%= product.description %></p>
 
-    <h6 class="mt-4">Available options</h6>
-    <div class="list-group">
-      <% variants.forEach(v => { %>
-        <div class="list-group-item d-flex justify-content-between align-items-center">
-          <span><%= v.color %> &middot; Size <%= v.size %></span>
-          <% if (v.stock_quantity > 0) { %>
-            <span class="badge bg-success"><%= v.stock_quantity %> in stock</span>
-          <% } else { %>
-            <span class="badge bg-secondary">Sold out</span>
-          <% } %>
-        </div>
-      <% }) %>
-    </div>
+    <% if (typeof query !== 'undefined' && query.error === 'stock') { %>
+      <div class="alert alert-warning">
+        Not enough stock for that selection. Please choose a smaller quantity.
+      </div>
+    <% } %>
+
+    <form method="POST" action="/cart/add" class="mt-4">
+      <input type="hidden" name="slug" value="<%= product.slug %>">
+
+      <div class="mb-3">
+        <label class="form-label">Size and colour</label>
+        <select name="variant_id" class="form-select" required>
+          <option value="">Choose an option</option>
+          <% variants.forEach(v => { %>
+            <option value="<%= v.id %>" <%= v.stock_quantity === 0 ? 'disabled' : '' %>>
+              <%= v.color %> &middot; Size <%= v.size %>
+              <% if (v.stock_quantity === 0) { %>
+                &mdash; sold out
+              <% } else if (v.stock_quantity <= 3) { %>
+                &mdash; only <%= v.stock_quantity %> left
+              <% } %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="mb-3" style="max-width: 120px;">
+        <label class="form-label">Quantity</label>
+        <input type="number" name="quantity" class="form-control" value="1" min="1" required>
+      </div>
+
+      <button class="btn btn-dark btn-lg w-100">Add to cart</button>
+    </form>
   </div>
 </div>
 
