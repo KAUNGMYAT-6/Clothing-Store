@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
 const { requireLogin } = require('../middleware/auth');
+const { mergeGuestCart } = require('../lib/cart');
 
 const router = express.Router();
 
@@ -58,10 +59,11 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const [[user]] = await pool.query(
+    const [users] = await pool.query(
       'SELECT * FROM users WHERE email = ?',
       [email]
     );
+    const user = users[0];
 
     // Same message for both failures, to avoid revealing which emails exist
     if (!user || !user.password_hash) {
@@ -85,6 +87,13 @@ router.post('/login', async (req, res) => {
       email: user.email,
       role: user.role
     };
+
+    // A failed cart merge should not prevent the user logging in
+    try {
+      await mergeGuestCart(req, user.id);
+    } catch (mergeErr) {
+      console.error('Cart merge failed:', mergeErr);
+    }
 
     const returnTo = req.session.returnTo || '/';
     delete req.session.returnTo;

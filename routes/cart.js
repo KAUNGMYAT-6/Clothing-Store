@@ -4,6 +4,7 @@ const { getOrCreateCart, getCartItems } = require('../lib/cart');
 
 const router = express.Router();
 
+// --- View cart ---
 router.get('/cart', async (req, res) => {
   try {
     if (!req.session.user && !req.session.guestToken) {
@@ -25,6 +26,7 @@ router.get('/cart', async (req, res) => {
   }
 });
 
+// --- Add to cart ---
 router.post('/cart/add', async (req, res) => {
   const { variant_id, slug } = req.body;
   const quantity = parseInt(req.body.quantity, 10);
@@ -63,6 +65,7 @@ router.post('/cart/add', async (req, res) => {
   }
 });
 
+// --- Update quantity ---
 router.post('/cart/update', async (req, res) => {
   const { item_id } = req.body;
   const quantity = parseInt(req.body.quantity, 10);
@@ -90,6 +93,7 @@ router.post('/cart/update', async (req, res) => {
   }
 });
 
+// --- Remove item ---
 router.post('/cart/remove', async (req, res) => {
   try {
     const cart = await getOrCreateCart(req);
