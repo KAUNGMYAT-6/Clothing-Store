@@ -37,6 +37,23 @@ app.use((req, res, next) => {
   next();
 });
 
+const { getOrCreateCart, getCartCount } = require('./lib/cart');
+
+app.use(async (req, res, next) => {
+  try {
+    if (req.session.user || req.session.guestToken) {
+      const cart = await getOrCreateCart(req);
+      res.locals.cartCount = await getCartCount(cart.id);
+    } else {
+      res.locals.cartCount = 0;
+    }
+    next();
+  } catch (err) {
+    res.locals.cartCount = 0;
+    next();
+  }
+});
+
 // Mount route modules
 app.use('/', productRoutes);
 app.use('/', authRoutes);

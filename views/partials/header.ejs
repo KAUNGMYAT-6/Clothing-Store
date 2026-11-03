@@ -9,16 +9,22 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <div class="ms-auto">
-        <% if (user) { %>
-            <span class="text-light me-3"><%= user.name %></span>
-            <form method="POST" action="/logout" class="d-inline">
-            <button class="btn btn-sm btn-outline-light">Log out</button>
-            </form>
-        <% } else { %>
-            <a href="/login" class="btn btn-sm btn-outline-light">Log in</a>
-            <a href="/register" class="btn btn-sm btn-light">Register</a>
-        <% } %>
+    <a class="navbar-brand" href="/">Clothing Store</a>
+
+    <div class="ms-auto d-flex align-items-center">
+      <a href="/cart" class="btn btn-sm btn-outline-light me-2">
+        Cart <span class="badge bg-light text-dark"><%= cartCount %></span>
+      </a>
+
+      <% if (user) { %>
+        <span class="text-light me-3"><%= user.name %></span>
+        <form method="POST" action="/logout" class="d-inline">
+          <button class="btn btn-sm btn-outline-light">Log out</button>
+        </form>
+      <% } else { %>
+        <a href="/login" class="btn btn-sm btn-outline-light me-2">Log in</a>
+        <a href="/register" class="btn btn-sm btn-light">Register</a>
+      <% } %>
     </div>
   </div>
 </nav>
