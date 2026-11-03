@@ -1,0 +1,81 @@
+<%- include('../partials/header') %>
+
+<h1 class="mb-4">Your cart</h1>
+
+<% if (items.length === 0) { %>
+  <div class="alert alert-light border text-center py-5">
+    <p class="mb-2">Your cart is empty.</p>
+    <a href="/" class="btn btn-sm btn-dark">Browse products</a>
+  </div>
+<% } else { %>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Price</th>
+          <th style="width: 140px;">Quantity</th>
+          <th class="text-end">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(item => { %>
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <img src="<%= item.image_url || 'https://placehold.co/80x100?text=No+Image' %>"
+                     alt="<%= item.name %>" width="60" class="rounded me-3">
+                <div>
+                  <a href="/products/<%= item.slug %>" class="text-dark text-decoration-none">
+                    <strong><%= item.name %></strong>
+                  </a>
+                  <div class="text-muted small"><%= item.color %> &middot; Size <%= item.size %></div>
+
+                  <% if (item.stock_quantity === 0) { %>
+                    <div class="text-danger small">Out of stock</div>
+                  <% } else if (item.stock_quantity < item.quantity) { %>
+                    <div class="text-warning small">Only <%= item.stock_quantity %> available</div>
+                  <% } %>
+
+                  <% if (Number(item.added_price) !== Number(item.current_price)) { %>
+                    <div class="text-muted small">
+                      Price changed from $<%= item.added_price %>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+            <td>$<%= item.current_price %></td>
+            <td>
+              <form method="POST" action="/cart/update" class="d-flex gap-1">
+                <input type="hidden" name="item_id" value="<%= item.id %>">
+                <input type="number" name="quantity" value="<%= item.quantity %>"
+                       min="1" class="form-control form-control-sm">
+                <button class="btn btn-sm btn-outline-dark">Update</button>
+              </form>
+            </td>
+            <td class="text-end">
+              $<%= (Number(item.current_price) * item.quantity).toFixed(2) %>
+            </td>
+            <td class="text-end">
+              <form method="POST" action="/cart/remove">
+                <input type="hidden" name="item_id" value="<%= item.id %>">
+                <button class="btn btn-sm btn-link text-danger p-0">Remove</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="d-flex justify-content-end align-items-center gap-4 mt-4">
+    <div class="fs-5">Subtotal: <strong>$<%= subtotal.toFixed(2) %></strong></div>
+    <a href="/checkout" class="btn btn-dark btn-lg">Checkout</a>
+  </div>
+
+<% } %>
+
+<%- include('../partials/footer') %>

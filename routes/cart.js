@@ -63,4 +63,45 @@ router.post('/cart/add', async (req, res) => {
   }
 });
 
+router.post('/cart/update', async (req, res) => {
+  const { item_id } = req.body;
+  const quantity = parseInt(req.body.quantity, 10);
+
+  try {
+    const cart = await getOrCreateCart(req);
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      await pool.query(
+        'DELETE FROM cart_items WHERE id = ? AND cart_id = ?',
+        [item_id, cart.id]
+      );
+      return res.redirect('/cart');
+    }
+
+    await pool.query(
+      'UPDATE cart_items SET quantity = ? WHERE id = ? AND cart_id = ?',
+      [quantity, item_id, cart.id]
+    );
+
+    res.redirect('/cart');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Could not update cart');
+  }
+});
+
+router.post('/cart/remove', async (req, res) => {
+  try {
+    const cart = await getOrCreateCart(req);
+    await pool.query(
+      'DELETE FROM cart_items WHERE id = ? AND cart_id = ?',
+      [req.body.item_id, cart.id]
+    );
+    res.redirect('/cart');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Could not update cart');
+  }
+});
+
 module.exports = router;
