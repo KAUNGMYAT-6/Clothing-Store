@@ -60,6 +60,8 @@ app.use('/', authRoutes);
 
 const cartRoutes = require('./routes/cart');
 app.use('/', cartRoutes);
+const checkoutRoutes = require('./routes/checkout');
+app.use('/', checkoutRoutes);
 
 app.get('/admin', requireAdmin, (req, res) => {
   res.send('Admin area');
