@@ -1,3 +1,4 @@
+// ---------- Requires ----------
 const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
@@ -5,19 +6,30 @@ const path = require('path');
 require('dotenv').config();
 
 const pool = require('./db/pool');
-const productRoutes = require('./routes/products');
-const authRoutes = require('./routes/auth');
+const { getOrCreateCart, getCartCount } = require('./lib/cart');
 const { requireAdmin } = require('./middleware/auth');
 
+const webhookRoutes = require('./routes/webhook');
+const productRoutes = require('./routes/products');
+const authRoutes = require('./routes/auth');
+const cartRoutes = require('./routes/cart');
+const checkoutRoutes = require('./routes/checkout');
+
+// ---------- App setup ----------
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Stripe webhook must come BEFORE any body parser:
+// signature verification needs the raw, unparsed request body
+app.use('/', webhookRoutes);
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 
+// ---------- Sessions ----------
 const sessionStore = new MySQLStore({}, pool);
 
 app.use(session({
@@ -28,17 +40,17 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24 * 7
+    maxAge: 1000 * 60 * 60 * 24 * 7   // 7 days
   }
 }));
 
+// Make the logged-in user available to every template
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
 
-const { getOrCreateCart, getCartCount } = require('./lib/cart');
-
+// Cart count for the navbar badge
 app.use(async (req, res, next) => {
   try {
     if (req.session.user || req.session.guestToken) {
@@ -54,19 +66,17 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Mount route modules
+// ---------- Routes ----------
 app.use('/', productRoutes);
 app.use('/', authRoutes);
-
-const cartRoutes = require('./routes/cart');
 app.use('/', cartRoutes);
-const checkoutRoutes = require('./routes/checkout');
 app.use('/', checkoutRoutes);
 
 app.get('/admin', requireAdmin, (req, res) => {
   res.send('Admin area');
 });
 
+// ---------- Start ----------
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
