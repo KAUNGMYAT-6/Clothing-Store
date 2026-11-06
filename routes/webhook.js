@@ -1,6 +1,7 @@
 const express = require('express');
 const Stripe = require('stripe');
 const pool = require('../db/pool');
+const { sendOrderConfirmation } = require('../lib/mailer');
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const router = express.Router();
@@ -97,6 +98,15 @@ async function fulfilOrder(session) {
 
     await connection.commit();
     console.log(`Order ${order.id} marked paid`);
+
+    // Send after committing: a mail failure must not roll back a paid order,
+    // and its own try/catch stops a dead mail service returning 500 to Stripe
+    try {
+      await sendOrderConfirmation(order, items);
+      console.log(`Confirmation email sent for order ${order.id}`);
+    } catch (mailErr) {
+      console.error(`Email failed for order ${order.id}:`, mailErr);
+    }
   } catch (err) {
     await connection.rollback();
     throw err;
