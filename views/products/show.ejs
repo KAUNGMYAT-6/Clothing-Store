@@ -33,33 +33,46 @@
       </div>
     <% } %>
 
-    <form method="POST" action="/cart/add" class="mt-4">
-      <input type="hidden" name="slug" value="<%= product.slug %>">
+    <% if (variants.length === 0) { %>
 
-      <div class="mb-3">
-        <label class="form-label">Size and colour</label>
-        <select name="variant_id" class="form-select" required>
-          <option value="">Choose an option</option>
-          <% variants.forEach(v => { %>
-            <option value="<%= v.id %>" <%= v.stock_quantity === 0 ? 'disabled' : '' %>>
-              <%= v.color %> &middot; Size <%= v.size %>
-              <% if (v.stock_quantity === 0) { %>
-                &mdash; sold out
-              <% } else if (v.stock_quantity <= 3) { %>
-                &mdash; only <%= v.stock_quantity %> left
-              <% } %>
-            </option>
-          <% }) %>
-        </select>
-      </div>
+      <div class="alert alert-secondary mt-4">Currently unavailable.</div>
 
-      <div class="mb-3" style="max-width: 120px;">
-        <label class="form-label">Quantity</label>
-        <input type="number" name="quantity" class="form-control" value="1" min="1" required>
-      </div>
+    <% } else if (variants.every(v => Number(v.stock_quantity) === 0)) { %>
 
-      <button class="btn btn-dark btn-lg w-100">Add to cart</button>
-    </form>
+      <div class="alert alert-secondary mt-4">Sold out.</div>
+
+    <% } else { %>
+
+      <form method="POST" action="/cart/add" class="mt-4">
+        <input type="hidden" name="slug" value="<%= product.slug %>">
+
+        <div class="mb-3">
+          <label class="form-label">Size and colour</label>
+          <select name="variant_id" class="form-select" required>
+            <option value="">Choose an option</option>
+            <% variants.forEach(v => { %>
+              <option value="<%= v.id %>"
+                      <%= Number(v.stock_quantity) === 0 ? 'disabled' : '' %>>
+                <%= v.color %> &middot; Size <%= v.size %>
+                <% if (Number(v.stock_quantity) === 0) { %>
+                  &mdash; sold out
+                <% } else if (Number(v.stock_quantity) <= 3) { %>
+                  &mdash; only <%= v.stock_quantity %> left
+                <% } %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="mb-3" style="max-width: 120px;">
+          <label class="form-label">Quantity</label>
+          <input type="number" name="quantity" class="form-control" value="1" min="1" required>
+        </div>
+
+        <button class="btn btn-dark btn-lg w-100">Add to cart</button>
+      </form>
+
+    <% } %>
   </div>
 </div>
 

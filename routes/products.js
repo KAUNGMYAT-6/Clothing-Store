@@ -27,12 +27,15 @@ router.get('/', async (req, res) => {
     const [products] = await pool.query(`
       SELECT p.id, p.name, p.slug, p.price,
              c.name AS category,
-             i.image_url, i.alt_text
+             i.image_url, i.alt_text,
+             COALESCE(SUM(v.stock_quantity), 0) AS total_stock
       FROM products p
       JOIN categories c ON c.id = p.category_id
       LEFT JOIN product_images i
         ON i.product_id = p.id AND i.is_primary = TRUE
+      LEFT JOIN product_variants v ON v.product_id = p.id
       WHERE ${conditions.join(' AND ')}
+      GROUP BY p.id, p.name, p.slug, p.price, c.name, i.image_url, i.alt_text
       ORDER BY p.created_at DESC
     `, params);
 
@@ -78,7 +81,8 @@ router.get('/products/:slug', async (req, res) => {
       title: product.name,
       product,
       variants,
-      images
+      images,
+      query: req.query
     });
   } catch (err) {
     console.error(err);
