@@ -8,6 +8,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const router = express.Router();
 
+// --- Checkout page ---
 router.get('/checkout', async (req, res) => {
   try {
     if (!req.session.user && !req.session.guestToken) {
@@ -44,6 +45,7 @@ router.get('/checkout', async (req, res) => {
   }
 });
 
+// --- Create the order and hand off to Stripe ---
 router.post('/checkout/session', async (req, res) => {
   const { email, shipping_name, shipping_address } = req.body;
 
@@ -135,6 +137,47 @@ router.post('/checkout/session', async (req, res) => {
     res.status(500).send('Could not start checkout');
   } finally {
     connection.release();
+  }
+});
+
+// --- Success page ---
+router.get('/order/success', async (req, res) => {
+  const { session_id } = req.query;
+
+  try {
+    if (!session_id) return res.redirect('/');
+
+    const [orders] = await pool.query(
+      'SELECT * FROM orders WHERE stripe_session_id = ?',
+      [session_id]
+    );
+    const order = orders[0];
+
+    if (!order) return res.redirect('/');
+
+    // Clear the guest cart once the order exists
+    // (the webhook can't do this: it has no session, so no guest token)
+    if (!order.user_id && req.session.guestToken) {
+      await pool.query(
+        'DELETE FROM carts WHERE guest_token = ?',
+        [req.session.guestToken]
+      );
+      delete req.session.guestToken;
+    }
+
+    const [items] = await pool.query(
+      'SELECT * FROM order_items WHERE order_id = ?',
+      [order.id]
+    );
+
+    res.render('checkout/success', {
+      title: 'Order confirmed',
+      order,
+      items
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Could not load order');
   }
 });
 
