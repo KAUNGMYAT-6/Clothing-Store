@@ -1,0 +1,40 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Products</h1>
+  <div>
+    <a href="/admin" class="btn btn-sm btn-outline-dark">Back to admin</a>
+    <a href="/admin/products/new" class="btn btn-sm btn-dark">New product</a>
+  </div>
+</div>
+
+<table class="table align-middle">
+  <thead>
+    <tr><th>Name</th><th>Category</th><th>Dept</th><th>Price</th>
+        <th>Variants</th><th>Stock</th><th>Active</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% products.forEach(p => { %>
+      <tr>
+        <td><%= p.name %></td>
+        <td class="small text-muted"><%= p.category %></td>
+        <td class="small text-muted"><%= p.department %></td>
+        <td>$<%= Number(p.price).toFixed(2) %></td>
+        <td><%= p.variant_count %></td>
+        <td <%= p.total_stock == 0 ? 'class="text-danger"' : '' %>><%= p.total_stock %></td>
+        <td>
+          <% if (p.is_active) { %>
+            <span class="badge bg-success">Yes</span>
+          <% } else { %>
+            <span class="badge bg-secondary">No</span>
+          <% } %>
+        </td>
+        <td class="text-end">
+          <a href="/admin/products/<%= p.id %>/edit" class="btn btn-sm btn-outline-dark">Edit</a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<%- include('../partials/footer') %>

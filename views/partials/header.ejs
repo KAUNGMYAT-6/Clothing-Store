@@ -17,6 +17,9 @@
       </a>
 
       <% if (user) { %>
+        <% if (user.role === 'admin') { %>
+          <a href="/admin" class="btn btn-sm btn-outline-warning me-2">Admin</a>
+        <% } %>
         <span class="text-light me-3"><%= user.name %></span>
         <form method="POST" action="/logout" class="d-inline">
           <button class="btn btn-sm btn-outline-light">Log out</button>
