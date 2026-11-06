@@ -214,4 +214,106 @@ router.post('/products/:id', async (req, res) => {
   }
 });
 
+// --- Variants ---
+router.post('/products/:id/variants', async (req, res) => {
+  const { size, color, sku, stock_quantity } = req.body;
+  const productId = req.params.id;
+
+  try {
+    if (!size || !color || !sku) {
+      return res.redirect(`/admin/products/${productId}/edit?error=variant`);
+    }
+
+    await pool.query(`
+      INSERT INTO product_variants (product_id, size, color, sku, stock_quantity)
+      VALUES (?, ?, ?, ?, ?)
+    `, [productId, size, color, sku, parseInt(stock_quantity, 10) || 0]);
+
+    res.redirect(`/admin/products/${productId}/edit`);
+  } catch (err) {
+    console.error(err);
+    const reason = err.code === 'ER_DUP_ENTRY' ? 'duplicate' : 'variant';
+    res.redirect(`/admin/products/${productId}/edit?error=${reason}`);
+  }
+});
+
+router.post('/products/:id/variants/:variantId/stock', async (req, res) => {
+  const stock = parseInt(req.body.stock_quantity, 10);
+
+  try {
+    if (Number.isInteger(stock) && stock >= 0) {
+      await pool.query(
+        'UPDATE product_variants SET stock_quantity = ? WHERE id = ? AND product_id = ?',
+        [stock, req.params.variantId, req.params.id]
+      );
+    }
+    res.redirect(`/admin/products/${req.params.id}/edit`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Could not update stock');
+  }
+});
+
+router.post('/products/:id/variants/:variantId/delete', async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM product_variants WHERE id = ? AND product_id = ?',
+      [req.params.variantId, req.params.id]
+    );
+    res.redirect(`/admin/products/${req.params.id}/edit`);
+  } catch (err) {
+    console.error(err);
+    res.redirect(`/admin/products/${req.params.id}/edit?error=variant_in_use`);
+  }
+});
+
+// --- Images ---
+router.post('/products/:id/images', async (req, res) => {
+  const { image_url, alt_text, sort_order, is_primary } = req.body;
+  const productId = req.params.id;
+
+  const connection = await pool.getConnection();
+  try {
+    if (!image_url) return res.redirect(`/admin/products/${productId}/edit`);
+
+    await connection.beginTransaction();
+
+    // Only one image can be primary, so clear the others first
+    if (is_primary === 'on') {
+      await connection.query(
+        'UPDATE product_images SET is_primary = FALSE WHERE product_id = ?',
+        [productId]
+      );
+    }
+
+    await connection.query(`
+      INSERT INTO product_images (product_id, image_url, alt_text, sort_order, is_primary)
+      VALUES (?, ?, ?, ?, ?)
+    `, [productId, image_url, alt_text || null,
+        parseInt(sort_order, 10) || 0, is_primary === 'on' ? 1 : 0]);
+
+    await connection.commit();
+    res.redirect(`/admin/products/${productId}/edit`);
+  } catch (err) {
+    await connection.rollback();
+    console.error(err);
+    res.status(500).send('Could not add image');
+  } finally {
+    connection.release();
+  }
+});
+
+router.post('/products/:id/images/:imageId/delete', async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM product_images WHERE id = ? AND product_id = ?',
+      [req.params.imageId, req.params.id]
+    );
+    res.redirect(`/admin/products/${req.params.id}/edit`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Could not delete image');
+  }
+});
+
 module.exports = router;

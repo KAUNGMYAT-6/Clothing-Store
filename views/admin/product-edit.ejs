@@ -1,0 +1,135 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Edit product</h1>
+  <div>
+    <a href="/products/<%= product.slug %>" class="btn btn-sm btn-outline-dark" target="_blank">View on site</a>
+    <a href="/admin/products" class="btn btn-sm btn-outline-dark">Back to products</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <h5 class="mb-3">Details</h5>
+    <form method="POST" action="/admin/products/<%= product.id %>">
+      <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" class="form-control" required value="<%= product.name %>">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Slug</label>
+        <input type="text" name="slug" class="form-control" required
+               pattern="[a-z0-9-]+" value="<%= product.slug %>">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3"><%= product.description %></textarea>
+      </div>
+      <div class="row">
+        <div class="col-4 mb-3">
+          <label class="form-label">Price</label>
+          <input type="number" name="price" step="0.01" min="0" class="form-control"
+                 required value="<%= product.price %>">
+        </div>
+        <div class="col-4 mb-3">
+          <label class="form-label">Category</label>
+          <select name="category_id" class="form-select">
+            <% categories.forEach(c => { %>
+              <option value="<%= c.id %>" <%= product.category_id == c.id ? 'selected' : '' %>>
+                <%= c.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-4 mb-3">
+          <label class="form-label">Department</label>
+          <select name="department" class="form-select">
+            <% ['men','women','unisex'].forEach(d => { %>
+              <option value="<%= d %>" <%= product.department === d ? 'selected' : '' %>>
+                <%= d %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="form-check mb-3">
+        <input type="checkbox" name="is_active" class="form-check-input"
+               id="active" <%= product.is_active ? 'checked' : '' %>>
+        <label class="form-check-label" for="active">Active (visible on the site)</label>
+      </div>
+      <button class="btn btn-dark">Save changes</button>
+    </form>
+  </div>
+
+  <div class="col-md-6">
+    <h5 class="mb-3">Variants</h5>
+
+    <% if (variants.length === 0) { %>
+      <div class="alert alert-warning small">
+        This product has no variants, so it can't be bought. Add at least one below.
+      </div>
+    <% } %>
+
+    <table class="table table-sm align-middle">
+      <tbody>
+        <% variants.forEach(v => { %>
+          <tr>
+            <td>
+              <%= v.color %> &middot; <%= v.size %><br>
+              <span class="text-muted small"><%= v.sku %></span>
+            </td>
+            <td style="width: 160px;">
+              <form method="POST"
+                    action="/admin/products/<%= product.id %>/variants/<%= v.id %>/stock"
+                    class="d-flex gap-1">
+                <input type="number" name="stock_quantity" min="0"
+                       value="<%= v.stock_quantity %>" class="form-control form-control-sm">
+                <button class="btn btn-sm btn-outline-dark">Set</button>
+              </form>
+            </td>
+            <td class="text-end">
+              <form method="POST"
+                    action="/admin/products/<%= product.id %>/variants/<%= v.id %>/delete">
+                <button class="btn btn-sm btn-link text-danger p-0">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <form method="POST" action="/admin/products/<%= product.id %>/variants" class="row g-2 mb-4">
+      <div class="col-3"><input name="size" class="form-control form-control-sm" placeholder="Size" required></div>
+      <div class="col-3"><input name="color" class="form-control form-control-sm" placeholder="Colour" required></div>
+      <div class="col-3"><input name="sku" class="form-control form-control-sm" placeholder="SKU" required></div>
+      <div class="col-2"><input name="stock_quantity" type="number" min="0" value="0" class="form-control form-control-sm"></div>
+      <div class="col-1"><button class="btn btn-sm btn-dark w-100">+</button></div>
+    </form>
+
+    <h5 class="mb-3">Images</h5>
+    <div class="row g-2 mb-3">
+      <% images.forEach(img => { %>
+        <div class="col-4">
+          <img src="<%= img.image_url %>" class="img-fluid rounded mb-1" alt="<%= img.alt_text %>">
+          <% if (img.is_primary) { %><span class="badge bg-dark">Primary</span><% } %>
+          <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/delete">
+            <button class="btn btn-sm btn-link text-danger p-0">Delete</button>
+          </form>
+        </div>
+      <% }) %>
+    </div>
+
+    <form method="POST" action="/admin/products/<%= product.id %>/images" class="row g-2">
+      <div class="col-12"><input name="image_url" class="form-control form-control-sm" placeholder="Image URL" required></div>
+      <div class="col-6"><input name="alt_text" class="form-control form-control-sm" placeholder="Alt text"></div>
+      <div class="col-3"><input name="sort_order" type="number" value="0" class="form-control form-control-sm"></div>
+      <div class="col-3">
+        <div class="form-check form-check-inline">
+          <input type="checkbox" name="is_primary" class="form-check-input" id="primary">
+          <label class="form-check-label small" for="primary">Primary</label>
+        </div>
+      </div>
+      <div class="col-12"><button class="btn btn-sm btn-dark">Add image</button></div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
