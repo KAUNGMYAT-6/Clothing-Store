@@ -7,13 +7,13 @@ require('dotenv').config();
 
 const pool = require('./db/pool');
 const { getOrCreateCart, getCartCount } = require('./lib/cart');
-const { requireAdmin } = require('./middleware/auth');
 
 const webhookRoutes = require('./routes/webhook');
 const productRoutes = require('./routes/products');
 const authRoutes = require('./routes/auth');
 const cartRoutes = require('./routes/cart');
 const checkoutRoutes = require('./routes/checkout');
+const adminRoutes = require('./routes/admin');
 
 // ---------- App setup ----------
 const app = express();
@@ -67,14 +67,11 @@ app.use(async (req, res, next) => {
 });
 
 // ---------- Routes ----------
+app.use('/admin', adminRoutes);
 app.use('/', productRoutes);
 app.use('/', authRoutes);
 app.use('/', cartRoutes);
 app.use('/', checkoutRoutes);
-
-app.get('/admin', requireAdmin, (req, res) => {
-  res.send('Admin area');
-});
 
 // ---------- Start ----------
 app.listen(PORT, () => {

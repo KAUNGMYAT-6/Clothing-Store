@@ -1,0 +1,49 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Admin</h1>
+  <div>
+    <a href="/admin/orders" class="btn btn-sm btn-outline-dark">Orders</a>
+    <a href="/admin/products" class="btn btn-sm btn-outline-dark">Products</a>
+  </div>
+</div>
+
+<div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
+  <div class="col"><div class="card"><div class="card-body">
+    <div class="text-muted small">Paid orders</div>
+    <div class="fs-4 fw-bold"><%= stats.paid_orders %></div>
+  </div></div></div>
+  <div class="col"><div class="card"><div class="card-body">
+    <div class="text-muted small">Pending</div>
+    <div class="fs-4 fw-bold"><%= stats.pending_orders %></div>
+  </div></div></div>
+  <div class="col"><div class="card"><div class="card-body">
+    <div class="text-muted small">Revenue</div>
+    <div class="fs-4 fw-bold">$<%= Number(stats.revenue).toFixed(2) %></div>
+  </div></div></div>
+  <div class="col"><div class="card"><div class="card-body">
+    <div class="text-muted small">Products</div>
+    <div class="fs-4 fw-bold"><%= stats.active_products %></div>
+  </div></div></div>
+  <div class="col"><div class="card"><div class="card-body">
+    <div class="text-muted small">Out of stock</div>
+    <div class="fs-4 fw-bold text-danger"><%= stats.out_of_stock %></div>
+  </div></div></div>
+</div>
+
+<h5>Recent orders</h5>
+<table class="table">
+  <thead><tr><th>#</th><th>Email</th><th>Status</th><th class="text-end">Total</th></tr></thead>
+  <tbody>
+    <% recent.forEach(o => { %>
+      <tr>
+        <td><a href="/admin/orders/<%= o.id %>"><%= o.id %></a></td>
+        <td><%= o.email %></td>
+        <td><span class="badge bg-secondary"><%= o.status %></span></td>
+        <td class="text-end">$<%= Number(o.total).toFixed(2) %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<%- include('../partials/footer') %>

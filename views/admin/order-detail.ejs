@@ -1,0 +1,57 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Order #<%= order.id %></h1>
+  <a href="/admin/orders" class="btn btn-sm btn-outline-dark">Back to orders</a>
+</div>
+
+<div class="row">
+  <div class="col-md-7">
+    <table class="table">
+      <thead><tr><th>Item</th><th>Qty</th><th class="text-end">Total</th></tr></thead>
+      <tbody>
+        <% items.forEach(i => { %>
+          <tr>
+            <td><%= i.product_name %><br>
+              <span class="text-muted small"><%= i.color %> · <%= i.size %></span></td>
+            <td><%= i.quantity %></td>
+            <td class="text-end">$<%= (Number(i.unit_price) * i.quantity).toFixed(2) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Status</h6>
+        <form method="POST" action="/admin/orders/<%= order.id %>/status" class="d-flex gap-2">
+          <select name="status" class="form-select form-select-sm">
+            <% ['pending','paid','shipped','delivered','cancelled'].forEach(s => { %>
+              <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+          <button class="btn btn-sm btn-dark">Update</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h6>Customer</h6>
+        <p class="small mb-2"><%= order.email %></p>
+        <h6>Shipping to</h6>
+        <p class="small text-muted mb-0">
+          <%= order.shipping_name %><br><%= order.shipping_address %>
+        </p>
+        <hr>
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Total</span><span>$<%= Number(order.total).toFixed(2) %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

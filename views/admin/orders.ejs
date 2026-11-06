@@ -1,0 +1,40 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Orders</h1>
+  <a href="/admin" class="btn btn-sm btn-outline-dark">Back to admin</a>
+</div>
+
+<form class="mb-4" method="GET" action="/admin/orders">
+  <div class="row g-2">
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="">All statuses</option>
+        <% ['pending','paid','shipped','delivered','cancelled'].forEach(s => { %>
+          <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2"><button class="btn btn-dark w-100">Filter</button></div>
+  </div>
+</form>
+
+<table class="table align-middle">
+  <thead>
+    <tr><th>#</th><th>Date</th><th>Email</th><th>Items</th><th>Status</th><th class="text-end">Total</th></tr>
+  </thead>
+  <tbody>
+    <% orders.forEach(o => { %>
+      <tr>
+        <td><a href="/admin/orders/<%= o.id %>">#<%= o.id %></a></td>
+        <td class="small text-muted"><%= new Date(o.created_at).toLocaleDateString() %></td>
+        <td><%= o.email %></td>
+        <td><%= o.item_count %></td>
+        <td><span class="badge bg-secondary"><%= o.status %></span></td>
+        <td class="text-end">$<%= Number(o.total).toFixed(2) %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<%- include('../partials/footer') %>
