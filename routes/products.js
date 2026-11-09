@@ -4,7 +4,7 @@ const pool = require('../db/pool');
 const router = express.Router();
 
 // Product listing with search and filters
-router.get('/', async (req, res) => {
+router.get('/shop', async (req, res) => {
   try {
     const { q, category, department } = req.query;
 

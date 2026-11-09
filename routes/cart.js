@@ -22,7 +22,8 @@ router.get('/cart', async (req, res) => {
     res.render('cart/index', { title: 'Your cart', items, subtotal });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Could not load cart');
+    req.flash('error', 'We could not load your cart. Please try again.');
+    res.redirect('/shop');
   }
 });
 
@@ -33,21 +34,30 @@ router.post('/cart/add', async (req, res) => {
 
   try {
     if (!variant_id || !Number.isInteger(quantity) || quantity < 1) {
+      req.flash('warning', 'Please choose a size and colour first.');
       return res.redirect(`/products/${slug}`);
     }
 
     const [[variant]] = await pool.query(
-      `SELECT v.*, p.price
+      `SELECT v.*, p.name, p.price
        FROM product_variants v
        JOIN products p ON p.id = v.product_id
        WHERE v.id = ?`,
       [variant_id]
     );
 
-    if (!variant) return res.redirect('/');
+    if (!variant) {
+      req.flash('error', 'That item is no longer available.');
+      return res.redirect('/shop');
+    }
 
     if (variant.stock_quantity < quantity) {
-      return res.redirect(`/products/${slug}?error=stock`);
+      req.flash('warning',
+        variant.stock_quantity === 0
+          ? 'That option just sold out.'
+          : `Only ${variant.stock_quantity} left in that size. Please lower the quantity.`
+      );
+      return res.redirect(`/products/${slug}`);
     }
 
     const cart = await getOrCreateCart(req);
@@ -58,10 +68,12 @@ router.post('/cart/add', async (req, res) => {
       ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
     `, [cart.id, variant.id, quantity, variant.price]);
 
+    req.flash('success', `${variant.name} (${variant.color}, ${variant.size}) added to your cart.`);
     res.redirect('/cart');
   } catch (err) {
     console.error(err);
-    res.status(500).send('Could not add to cart');
+    req.flash('error', 'We could not add that to your cart. Please try again.');
+    res.redirect(`/products/${slug}`);
   }
 });
 
@@ -78,6 +90,7 @@ router.post('/cart/update', async (req, res) => {
         'DELETE FROM cart_items WHERE id = ? AND cart_id = ?',
         [item_id, cart.id]
       );
+      req.flash('info', 'Item removed from your cart.');
       return res.redirect('/cart');
     }
 
@@ -86,10 +99,12 @@ router.post('/cart/update', async (req, res) => {
       [quantity, item_id, cart.id]
     );
 
+    req.flash('success', 'Cart updated.');
     res.redirect('/cart');
   } catch (err) {
     console.error(err);
-    res.status(500).send('Could not update cart');
+    req.flash('error', 'We could not update your cart.');
+    res.redirect('/cart');
   }
 });
 
@@ -101,10 +116,12 @@ router.post('/cart/remove', async (req, res) => {
       'DELETE FROM cart_items WHERE id = ? AND cart_id = ?',
       [req.body.item_id, cart.id]
     );
+    req.flash('info', 'Item removed from your cart.');
     res.redirect('/cart');
   } catch (err) {
     console.error(err);
-    res.status(500).send('Could not update cart');
+    req.flash('error', 'We could not remove that item.');
+    res.redirect('/cart');
   }
 });
 

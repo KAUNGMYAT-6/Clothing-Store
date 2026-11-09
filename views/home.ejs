@@ -1,0 +1,117 @@
+<%- include('partials/header') %>
+
+<!-- Hero -->
+<section class="hero mb-5">
+  <div class="eyebrow mb-3">New season · 2026</div>
+  <h1 class="mb-3">Pieces worth keeping.</h1>
+  <p class="mb-4">
+    Considered everyday clothing in natural fabrics. Made in small runs,
+    designed to outlast the season.
+  </p>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="/shop" class="btn btn-light-brand btn-lg">Shop the collection</a>
+    <a href="/shop?department=women" class="btn btn-lg btn-outline-light">Women</a>
+    <a href="/shop?department=men" class="btn btn-lg btn-outline-light">Men</a>
+  </div>
+</section>
+
+<!-- Value props -->
+<section class="row g-4 mb-5 pb-3">
+  <div class="col-md-4">
+    <div class="value-prop">
+      <div class="value-prop__icon">✦</div>
+      <div>
+        <div class="value-prop__title">Natural fabrics</div>
+        <p class="value-prop__text">Linen, cotton and wool chosen for how they wear over time.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="value-prop">
+      <div class="value-prop__icon">◷</div>
+      <div>
+        <div class="value-prop__title">Ships in 2–3 days</div>
+        <p class="value-prop__text">Flat $5 shipping across Singapore, tracked end to end.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="value-prop">
+      <div class="value-prop__icon">↺</div>
+      <div>
+        <div class="value-prop__title">Easy returns</div>
+        <p class="value-prop__text">Thirty days to change your mind, no questions asked.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured -->
+<section class="mb-5">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow mb-1">Just arrived</div>
+      <h2 class="mb-0">New this season</h2>
+    </div>
+    <a href="/shop" class="btn btn-sm btn-outline-brand">View all</a>
+  </div>
+
+  <% if (featured.length === 0) { %>
+    <div class="empty-state">
+      <p class="text-mute mb-0">Nothing in stock just yet. Check back soon.</p>
+    </div>
+  <% } else { %>
+    <div class="row row-cols-2 row-cols-md-4 g-3 g-md-4">
+      <% featured.forEach(product => { %>
+        <div class="col">
+          <a href="/products/<%= product.slug %>" class="text-decoration-none">
+            <article class="product-card">
+              <div class="product-card__media">
+                <img src="<%= product.image_url || 'https://placehold.co/600x800/FAF8FC/8B8398?text=Denise' %>"
+                     alt="<%= product.alt_text || product.name %>" loading="lazy">
+              </div>
+              <div class="product-card__body">
+                <h3 class="product-card__name"><%= product.name %></h3>
+                <div class="product-card__meta"><%= product.category %></div>
+                <div class="product-card__price">$<%= Number(product.price).toFixed(2) %></div>
+              </div>
+            </article>
+          </a>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<!-- Categories -->
+<section class="mb-5">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow mb-1">Browse</div>
+      <h2 class="mb-0">Shop by category</h2>
+    </div>
+  </div>
+
+  <div class="row row-cols-2 row-cols-md-4 g-3">
+    <% categories.forEach(c => { %>
+      <div class="col">
+        <a href="/shop?category=<%= c.id %>" class="category-tile">
+          <div class="category-tile__name"><%= c.name %></div>
+          <div class="category-tile__count"><%= c.product_count %> item<%= c.product_count === 1 ? '' : 's' %></div>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<!-- Closing band -->
+<section class="surface text-center p-5" style="border-radius: var(--radius-lg);">
+  <div class="gradient-rule mx-auto mb-4" style="width: 60px;"></div>
+  <h2 class="mb-2">Not sure where to start?</h2>
+  <p class="text-mute mb-4" style="max-width: 44ch; margin-inline: auto;">
+    Browse the full collection, filter by size and department, and find something that fits.
+  </p>
+  <a href="/shop" class="btn btn-brand btn-lg"><span>Browse everything</span></a>
+</section>
+
+<%- include('partials/footer') %>

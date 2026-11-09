@@ -10,9 +10,11 @@ require('dotenv').config();
 
 const pool = require('./db/pool');
 const passport = require('./lib/passport');
+const { flash } = require('./middleware/flash');
 const { getOrCreateCart, getCartCount } = require('./lib/cart');
 
 const webhookRoutes = require('./routes/webhook');
+const homeRoutes = require('./routes/home');
 const productRoutes = require('./routes/products');
 const authRoutes = require('./routes/auth');
 const cartRoutes = require('./routes/cart');
@@ -36,7 +38,8 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
+      styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com", "'unsafe-inline'"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
       formAction: ["'self'", "https://checkout.stripe.com"]
     }
@@ -70,12 +73,14 @@ app.use(session({
 // Passport handles authentication only; sessions stay ours
 app.use(passport.initialize());
 
+// Flash messages — after sessions (it uses req.session), before routes (they call req.flash)
+app.use(flash);
+
 // ---------- CSRF (synchroniser token pattern: the token lives in the session) ----------
 const { csrfSynchronisedProtection, generateToken } = csrfSync({
   getTokenFromRequest: (req) => req.body._csrf
 });
 
-// Issue a token for every request so templates can render it
 app.use((req, res, next) => {
   res.locals.csrfToken = generateToken(req);
   next();
@@ -115,6 +120,7 @@ app.use(async (req, res, next) => {
 
 // ---------- Routes ----------
 app.use('/admin', adminRoutes);
+app.use('/', homeRoutes);
 app.use('/', productRoutes);
 app.use('/', authRoutes);
 app.use('/', cartRoutes);

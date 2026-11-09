@@ -1,0 +1,16 @@
+<% if (flash && flash.length) { %>
+  <div class="flash-stack mb-4">
+    <% flash.forEach(f => { %>
+      <div class="flash flash--<%= f.type %>" role="status">
+        <span class="flash__icon" aria-hidden="true">
+          <% if (f.type === 'success') { %>✓<% } %>
+          <% if (f.type === 'error')   { %>✕<% } %>
+          <% if (f.type === 'warning') { %>!<% } %>
+          <% if (f.type === 'info')    { %>i<% } %>
+        </span>
+        <span class="flash__text"><%= f.message %></span>
+        <button type="button" class="flash__close" data-dismiss-flash aria-label="Dismiss">×</button>
+      </div>
+    <% }) %>
+  </div>
+<% } %>

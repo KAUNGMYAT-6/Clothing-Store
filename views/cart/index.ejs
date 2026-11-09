@@ -3,19 +3,20 @@
 <h1 class="mb-4">Your cart</h1>
 
 <% if (items.length === 0) { %>
-  <div class="alert alert-light border text-center py-5">
-    <p class="mb-2">Your cart is empty.</p>
-    <a href="/" class="btn btn-sm btn-dark">Browse products</a>
+  <div class="empty-state">
+    <h3 class="h5 mb-2">Your cart is empty</h3>
+    <p class="text-mute mb-3">Nothing here yet.</p>
+    <a href="/shop" class="btn btn-brand"><span>Browse products</span></a>
   </div>
 <% } else { %>
 
-  <div class="table-responsive">
-    <table class="table align-middle">
+  <div class="table-responsive surface p-2">
+    <table class="table align-middle mb-0">
       <thead>
         <tr>
           <th>Item</th>
           <th>Price</th>
-          <th style="width: 140px;">Quantity</th>
+          <th style="width: 150px;">Quantity</th>
           <th class="text-end">Total</th>
           <th></th>
         </tr>
@@ -25,46 +26,46 @@
           <tr>
             <td>
               <div class="d-flex align-items-center">
-                <img src="<%= item.image_url || 'https://placehold.co/80x100?text=No+Image' %>"
+                <img src="<%= item.image_url || 'https://placehold.co/80x100/FAF8FC/8B8398?text=D' %>"
                      alt="<%= item.name %>" width="60" class="rounded me-3">
                 <div>
-                  <a href="/products/<%= item.slug %>" class="text-dark text-decoration-none">
-                    <strong><%= item.name %></strong>
+                  <a href="/products/<%= item.slug %>" class="text-decoration-none">
+                    <strong class="text-dark"><%= item.name %></strong>
                   </a>
-                  <div class="text-muted small"><%= item.color %> &middot; Size <%= item.size %></div>
+                  <div class="text-mute small"><%= item.color %> · Size <%= item.size %></div>
 
                   <% if (Number(item.stock_quantity) === 0) { %>
-                    <div class="text-danger small">Out of stock</div>
+                    <span class="badge-soft is-out mt-1">Out of stock</span>
                   <% } else if (Number(item.stock_quantity) < item.quantity) { %>
-                    <div class="text-warning small">Only <%= item.stock_quantity %> available</div>
+                    <span class="badge-soft is-low mt-1">Only <%= item.stock_quantity %> left</span>
                   <% } %>
 
                   <% if (Number(item.added_price) !== Number(item.current_price)) { %>
-                    <div class="text-muted small">
+                    <div class="text-mute small mt-1">
                       Price changed from $<%= item.added_price %>
                     </div>
                   <% } %>
                 </div>
               </div>
             </td>
-            <td>$<%= item.current_price %></td>
+            <td>$<%= Number(item.current_price).toFixed(2) %></td>
             <td>
               <form method="POST" action="/cart/update" class="d-flex gap-1">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="item_id" value="<%= item.id %>">
                 <input type="number" name="quantity" value="<%= item.quantity %>"
                        min="1" class="form-control form-control-sm">
-                <button class="btn btn-sm btn-outline-dark">Update</button>
+                <button class="btn btn-sm btn-outline-brand">Update</button>
               </form>
             </td>
-            <td class="text-end">
+            <td class="text-end fw-semibold">
               $<%= (Number(item.current_price) * item.quantity).toFixed(2) %>
             </td>
             <td class="text-end">
               <form method="POST" action="/cart/remove">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="item_id" value="<%= item.id %>">
-                <button class="btn btn-sm btn-link text-danger p-0">Remove</button>
+                <button class="btn btn-sm btn-ghost text-danger">Remove</button>
               </form>
             </td>
           </tr>
@@ -74,8 +75,8 @@
   </div>
 
   <div class="d-flex justify-content-end align-items-center gap-4 mt-4">
-    <div class="fs-5">Subtotal: <strong>$<%= subtotal.toFixed(2) %></strong></div>
-    <a href="/checkout" class="btn btn-dark btn-lg">Checkout</a>
+    <div class="fs-5">Subtotal <strong>$<%= subtotal.toFixed(2) %></strong></div>
+    <a href="/checkout" class="btn btn-brand btn-lg"><span>Checkout</span></a>
   </div>
 
 <% } %>
