@@ -44,6 +44,7 @@
     <% } else { %>
 
       <form method="POST" action="/cart/add" class="mt-4">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="slug" value="<%= product.slug %>">
 
         <div class="mb-3">

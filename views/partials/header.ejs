@@ -22,6 +22,7 @@
         <% } %>
         <span class="text-light me-3"><%= user.name %></span>
         <form method="POST" action="/logout" class="d-inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <button class="btn btn-sm btn-outline-light">Log out</button>
         </form>
       <% } else { %>

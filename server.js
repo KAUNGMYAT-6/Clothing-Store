@@ -2,6 +2,9 @@
 const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { csrfSync } = require('csrf-sync');
 const path = require('path');
 require('dotenv').config();
 
@@ -20,11 +23,28 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Stripe webhook must come BEFORE any body parser:
-// signature verification needs the raw, unparsed request body
+// ---------- Security headers ----------
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      formAction: ["'self'", "https://checkout.stripe.com"]
+    }
+  }
+}));
+
+// Stripe webhook must come BEFORE any body parser and before CSRF:
+// signature verification needs the raw body, and Stripe sends no CSRF token
 app.use('/', webhookRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -41,6 +61,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7   // 7 days
   }
 }));
@@ -48,13 +70,34 @@ app.use(session({
 // Passport handles authentication only; sessions stay ours
 app.use(passport.initialize());
 
-// Make the logged-in user available to every template
+// ---------- CSRF (synchroniser token pattern: the token lives in the session) ----------
+const { csrfSynchronisedProtection, generateToken } = csrfSync({
+  getTokenFromRequest: (req) => req.body._csrf
+});
+
+// Issue a token for every request so templates can render it
+app.use((req, res, next) => {
+  res.locals.csrfToken = generateToken(req);
+  next();
+});
+
+app.use(csrfSynchronisedProtection);
+
+// ---------- Rate limiting ----------
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many attempts. Please try again later.'
+});
+
+app.use(['/login', '/register'], authLimiter);
+
+// ---------- Template locals ----------
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
 
-// Cart count for the navbar badge
 app.use(async (req, res, next) => {
   try {
     if (req.session.user || req.session.guestToken) {
@@ -77,6 +120,16 @@ app.use('/', authRoutes);
 app.use('/', cartRoutes);
 app.use('/', checkoutRoutes);
 
+// ---------- Error handling (must be last, and take four arguments) ----------
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN' || err.message === 'invalid csrf token') {
+    return res.status(403).send('Your session expired. Please go back and try again.');
+  }
+  console.error(err);
+  res.status(500).send('Something went wrong.');
+});
+
+// ---------- Start ----------
 const required = ['DB_HOST', 'DB_USER', 'DB_NAME', 'SESSION_SECRET',
                   'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'BASE_URL'];
 const missing = required.filter(k => !process.env[k]);
@@ -84,7 +137,6 @@ if (missing.length) {
   console.warn('Missing environment variables:', missing.join(', '));
 }
 
-// ---------- Start ----------
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

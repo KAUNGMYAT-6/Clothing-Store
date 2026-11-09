@@ -33,9 +33,9 @@
                   </a>
                   <div class="text-muted small"><%= item.color %> &middot; Size <%= item.size %></div>
 
-                  <% if (item.stock_quantity === 0) { %>
+                  <% if (Number(item.stock_quantity) === 0) { %>
                     <div class="text-danger small">Out of stock</div>
-                  <% } else if (item.stock_quantity < item.quantity) { %>
+                  <% } else if (Number(item.stock_quantity) < item.quantity) { %>
                     <div class="text-warning small">Only <%= item.stock_quantity %> available</div>
                   <% } %>
 
@@ -50,6 +50,7 @@
             <td>$<%= item.current_price %></td>
             <td>
               <form method="POST" action="/cart/update" class="d-flex gap-1">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="item_id" value="<%= item.id %>">
                 <input type="number" name="quantity" value="<%= item.quantity %>"
                        min="1" class="form-control form-control-sm">
@@ -61,6 +62,7 @@
             </td>
             <td class="text-end">
               <form method="POST" action="/cart/remove">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="item_id" value="<%= item.id %>">
                 <button class="btn btn-sm btn-link text-danger p-0">Remove</button>
               </form>
