@@ -6,6 +6,7 @@ const path = require('path');
 require('dotenv').config();
 
 const pool = require('./db/pool');
+const passport = require('./lib/passport');
 const { getOrCreateCart, getCartCount } = require('./lib/cart');
 
 const webhookRoutes = require('./routes/webhook');
@@ -44,6 +45,9 @@ app.use(session({
   }
 }));
 
+// Passport handles authentication only; sessions stay ours
+app.use(passport.initialize());
+
 // Make the logged-in user available to every template
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
@@ -72,6 +76,13 @@ app.use('/', productRoutes);
 app.use('/', authRoutes);
 app.use('/', cartRoutes);
 app.use('/', checkoutRoutes);
+
+const required = ['DB_HOST', 'DB_USER', 'DB_NAME', 'SESSION_SECRET',
+                  'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'BASE_URL'];
+const missing = required.filter(k => !process.env[k]);
+if (missing.length) {
+  console.warn('Missing environment variables:', missing.join(', '));
+}
 
 // ---------- Start ----------
 app.listen(PORT, () => {

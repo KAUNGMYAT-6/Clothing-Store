@@ -1,10 +1,38 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
+const passport = require('../lib/passport');
 const { requireLogin } = require('../middleware/auth');
 const { mergeGuestCart } = require('../lib/cart');
 
 const router = express.Router();
+
+// Shared by both password and Google login
+async function completeLogin(req, res, user) {
+  req.session.user = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role || 'user'
+  };
+
+  try {
+    await mergeGuestCart(req, user.id);
+  } catch (mergeErr) {
+    console.error('Cart merge failed:', mergeErr);
+  }
+
+  const returnTo = req.session.returnTo || '/';
+  delete req.session.returnTo;
+
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save failed:', err);
+      return res.redirect('/login');
+    }
+    res.redirect(returnTo);
+  });
+}
 
 // --- Registration ---
 router.get('/register', (req, res) => {
@@ -65,7 +93,8 @@ router.post('/login', async (req, res) => {
     );
     const user = users[0];
 
-    // Same message for both failures, to avoid revealing which emails exist
+    // Same message for both failures, to avoid revealing which emails exist.
+    // !user.password_hash covers Google-only accounts.
     if (!user || !user.password_hash) {
       return res.status(401).render('auth/login', {
         title: 'Log in',
@@ -81,35 +110,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    req.session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    };
-
-    // A failed cart merge should not prevent the user logging in
-    try {
-      await mergeGuestCart(req, user.id);
-    } catch (mergeErr) {
-      console.error('Cart merge failed:', mergeErr);
-    }
-
-    const returnTo = req.session.returnTo || '/';
-    delete req.session.returnTo;
-
-    // Wait for the session to be written before redirecting, so the next
-    // request definitely sees the logged-in user
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save failed:', err);
-        return res.status(500).render('auth/login', {
-          title: 'Log in',
-          error: 'Something went wrong.'
-        });
-      }
-      res.redirect(returnTo);
-    });
+    await completeLogin(req, res, user);
   } catch (err) {
     console.error(err);
     res.status(500).render('auth/login', {
@@ -118,6 +119,23 @@ router.post('/login', async (req, res) => {
     });
   }
 });
+
+// --- Google OAuth ---
+router.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+);
+
+router.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login', session: false }),
+  async (req, res) => {
+    try {
+      await completeLogin(req, res, req.user);
+    } catch (err) {
+      console.error(err);
+      res.redirect('/login');
+    }
+  }
+);
 
 // --- Logout ---
 router.post('/logout', (req, res) => {
