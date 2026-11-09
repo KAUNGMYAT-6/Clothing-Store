@@ -44,14 +44,14 @@ router.get('/shop', async (req, res) => {
     );
 
     res.render('products/index', {
-      title: 'Products',
+      title: 'Shop',
       products,
       categories,
       filters: { q, category, department }
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Database error');
+    res.status(500).render('errors/500', { title: 'Something went wrong' });
   }
 });
 
@@ -65,7 +65,9 @@ router.get('/products/:slug', async (req, res) => {
       WHERE p.slug = ? AND p.is_active = TRUE
     `, [req.params.slug]);
 
-    if (!product) return res.status(404).send('Product not found');
+    if (!product) {
+      return res.status(404).render('errors/404', { title: 'Product not found' });
+    }
 
     const [variants] = await pool.query(
       'SELECT * FROM product_variants WHERE product_id = ? ORDER BY color, size',
@@ -86,7 +88,7 @@ router.get('/products/:slug', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Database error');
+    res.status(500).render('errors/500', { title: 'Something went wrong' });
   }
 });
 

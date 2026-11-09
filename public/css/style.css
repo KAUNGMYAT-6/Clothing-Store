@@ -451,6 +451,27 @@ a:hover { color: var(--purple-500); }
 }
 
 /* ============================================
+   Error pages
+   ============================================ */
+.error-page {
+  text-align: center;
+  padding: clamp(3rem, 10vw, 7rem) 1.5rem;
+  max-width: 46ch;
+  margin-inline: auto;
+}
+.error-page__code {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(4.5rem, 16vw, 8rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: .5rem;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================
    Utilities
    ============================================ */
 .gradient-text {

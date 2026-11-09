@@ -135,6 +135,22 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something went wrong.');
 });
 
+// ---------- 404: no route matched ----------
+app.use((req, res) => {
+  res.status(404).render('errors/404', { title: 'Page not found' });
+});
+
+// ---------- Errors (must be last, and take four arguments) ----------
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN' || err.message === 'invalid csrf token') {
+    req.flash('warning', 'Your session expired. Please try that again.');
+    return res.redirect('back');
+  }
+
+  console.error(err);
+  res.status(500).render('errors/500', { title: 'Something went wrong' });
+});
+
 // ---------- Start ----------
 const required = ['DB_HOST', 'DB_USER', 'DB_NAME', 'SESSION_SECRET',
                   'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'BASE_URL'];
