@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
+const { upload, uploadToCloudinary, deleteFromCloudinary } = require('../lib/upload');
 
 const router = express.Router();
 
@@ -41,7 +42,6 @@ router.get('/', async (req, res) => {
       LIMIT 6
     `);
 
-    // Revenue per day, last 7 days
     const [rows] = await pool.query(`
       SELECT DATE(created_at) AS day, COALESCE(SUM(total), 0) AS revenue
       FROM orders
@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
       GROUP BY DATE(created_at)
     `);
 
-    // Days with no orders don't come back from GROUP BY, so fill the gaps
+    // GROUP BY only returns days that have orders, so fill the gaps
     const byDay = {};
     rows.forEach(r => {
       const key = new Date(r.day).toISOString().slice(0, 10);
@@ -265,7 +265,9 @@ router.get('/products/:id/edit', async (req, res) => {
       [product.id]
     );
     const [images] = await pool.query(
-      'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order',
+      `SELECT * FROM product_images
+       WHERE product_id = ?
+       ORDER BY is_primary DESC, sort_order ASC, id ASC`,
       [product.id]
     );
 
@@ -377,22 +379,40 @@ router.post('/products/:id/variants/:variantId/delete', async (req, res) => {
 // ============================================================
 // Images
 // ============================================================
-router.post('/products/:id/images', async (req, res) => {
-  const { image_url, alt_text, sort_order, is_primary } = req.body;
+router.post('/products/:id/images', upload.single('image'), async (req, res) => {
+  const { alt_text, sort_order, is_primary, image_url } = req.body;
   const productId = req.params.id;
 
   const connection = await pool.getConnection();
   try {
-    if (!image_url) {
-      req.flash('warning', 'An image URL is required.');
+    let finalUrl = null;
+    let cloudinaryId = null;
+
+    if (req.file) {
+      // Buffer goes straight to Cloudinary — nothing written to disk,
+      // because hosting platforms wipe the filesystem on restart
+      const result = await uploadToCloudinary(req.file.buffer);
+      finalUrl = result.secure_url;
+      cloudinaryId = result.public_id;
+    } else if (image_url) {
+      finalUrl = image_url;
+    } else {
+      req.flash('warning', 'Choose a file to upload, or paste an image URL.');
       return res.redirect(`/admin/products/${productId}/edit`);
     }
 
     await connection.beginTransaction();
 
-    // Only one image can be primary, so clear the others first.
-    // Both steps must happen together, hence the transaction.
-    if (is_primary === 'on') {
+    // The first image for a product becomes the main one automatically —
+    // nobody should have to remember a checkbox for the obvious case
+    const [[existing]] = await connection.query(
+      'SELECT COUNT(*) AS n FROM product_images WHERE product_id = ?',
+      [productId]
+    );
+    const makePrimary = is_primary === 'on' || existing.n === 0;
+
+    // Only one image can be primary, so clear the others first
+    if (makePrimary) {
       await connection.query(
         'UPDATE product_images SET is_primary = FALSE WHERE product_id = ?',
         [productId]
@@ -400,11 +420,12 @@ router.post('/products/:id/images', async (req, res) => {
     }
 
     await connection.query(`
-      INSERT INTO product_images (product_id, image_url, alt_text, sort_order, is_primary)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO product_images
+        (product_id, image_url, cloudinary_id, alt_text, sort_order, is_primary)
+      VALUES (?, ?, ?, ?, ?, ?)
     `, [
-      productId, image_url, alt_text || null,
-      parseInt(sort_order, 10) || 0, is_primary === 'on' ? 1 : 0
+      productId, finalUrl, cloudinaryId, alt_text || null,
+      parseInt(sort_order, 10) || 0, makePrimary ? 1 : 0
     ]);
 
     await connection.commit();
@@ -413,7 +434,7 @@ router.post('/products/:id/images', async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error(err);
-    req.flash('error', 'Could not add the image.');
+    req.flash('error', err.message || 'Could not add the image.');
     res.redirect(`/admin/products/${productId}/edit`);
   } finally {
     connection.release();
@@ -450,10 +471,36 @@ router.post('/products/:id/images/:imageId/primary', async (req, res) => {
 
 router.post('/products/:id/images/:imageId/delete', async (req, res) => {
   try {
+    const [[img]] = await pool.query(
+      'SELECT cloudinary_id, is_primary FROM product_images WHERE id = ? AND product_id = ?',
+      [req.params.imageId, req.params.id]
+    );
+
     await pool.query(
       'DELETE FROM product_images WHERE id = ? AND product_id = ?',
       [req.params.imageId, req.params.id]
     );
+
+    // If the main image was deleted, promote whatever's left
+    if (img && img.is_primary) {
+      await pool.query(`
+        UPDATE product_images SET is_primary = TRUE
+        WHERE product_id = ?
+        ORDER BY sort_order ASC, id ASC
+        LIMIT 1
+      `, [req.params.id]);
+    }
+
+    // Remove the file from Cloudinary too, but don't fail the request if
+    // that call errors — the database row is already gone
+    if (img && img.cloudinary_id) {
+      try {
+        await deleteFromCloudinary(img.cloudinary_id);
+      } catch (cloudErr) {
+        console.error('Cloudinary delete failed:', cloudErr);
+      }
+    }
+
     req.flash('info', 'Image deleted.');
     res.redirect(`/admin/products/${req.params.id}/edit`);
   } catch (err) {

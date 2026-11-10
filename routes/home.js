@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    // Newest four products with stock
+    // Newest four products that are actually buyable
     const [featured] = await pool.query(`
       SELECT p.id, p.name, p.slug, p.price,
              c.name AS category,
@@ -13,7 +13,12 @@ router.get('/', async (req, res) => {
              COALESCE(SUM(v.stock_quantity), 0) AS total_stock
       FROM products p
       JOIN categories c ON c.id = p.category_id
-      LEFT JOIN product_images i ON i.product_id = p.id AND i.is_primary = TRUE
+      LEFT JOIN product_images i ON i.id = (
+        SELECT id FROM product_images
+        WHERE product_id = p.id
+        ORDER BY is_primary DESC, sort_order ASC, id ASC
+        LIMIT 1
+      )
       LEFT JOIN product_variants v ON v.product_id = p.id
       WHERE p.is_active = TRUE
       GROUP BY p.id, p.name, p.slug, p.price, c.name, i.image_url, i.alt_text

@@ -76,9 +76,23 @@ app.use(passport.initialize());
 // Flash messages — after sessions, before routes
 app.use(flash);
 
+// ---------- Safe template defaults ----------
+// Set before anything that can throw, so error pages always render even
+// when the middleware below never got a chance to run
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  res.locals.cartCount = 0;
+  res.locals.navCategories = [];
+  res.locals.csrfToken = '';
+  next();
+});
+
 // ---------- CSRF (synchroniser token pattern) ----------
 const { csrfSynchronisedProtection, generateToken } = csrfSync({
-  getTokenFromRequest: (req) => req.body._csrf
+  // Normal forms send the token in the body. Multipart (file upload) forms
+  // can't: express.urlencoded skips multipart, so req.body is undefined
+  // here — guard it, and let those forms pass the token in the query string.
+  getTokenFromRequest: (req) => (req.body && req.body._csrf) || req.query._csrf
 });
 
 app.use((req, res, next) => {
@@ -89,17 +103,17 @@ app.use((req, res, next) => {
 app.use(csrfSynchronisedProtection);
 
 // ---------- Rate limiting ----------
-// Keyed by IP. Generous enough for shared networks (a campus or office
-// behind one NAT), tight enough to stop scripted brute force.
+// Keyed by IP. Generous enough for shared networks (a campus behind one
+// NAT), tight enough to stop scripted brute force.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 50,
   message: 'Too many attempts. Please try again in a few minutes.'
 });
 
-// Password resets send email, so they cost more than a page view.
-// A second, per-account limit lives in routes/auth.js — IP limits alone
-// don't stop a distributed attack on one person's inbox.
+// Resets send email, so they cost more than a page view. A second,
+// per-account limit lives in routes/auth.js — IP limits alone don't stop
+// a distributed attack on one person's inbox.
 const resetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
@@ -109,23 +123,16 @@ const resetLimiter = rateLimit({
 app.use(['/login', '/register'], loginLimiter);
 app.use('/forgot-password', resetLimiter);
 
-// ---------- Template locals ----------
-app.use((req, res, next) => {
-  res.locals.user = req.session.user || null;
-  next();
-});
-
+// ---------- Live template data ----------
 // Cart count for the navbar badge
 app.use(async (req, res, next) => {
   try {
     if (req.session.user || req.session.guestToken) {
       const cart = await getOrCreateCart(req);
       res.locals.cartCount = await getCartCount(cart.id);
-    } else {
-      res.locals.cartCount = 0;
     }
   } catch (err) {
-    res.locals.cartCount = 0;
+    // Leave the default of 0 — a broken badge shouldn't break the page
   }
   next();
 });
@@ -142,7 +149,7 @@ app.use(async (req, res, next) => {
     `);
     res.locals.navCategories = cats;
   } catch (err) {
-    res.locals.navCategories = [];
+    // Leave the default of []
   }
   next();
 });
@@ -162,9 +169,16 @@ app.use((req, res) => {
 
 // ---------- Errors (must be last, and take four arguments) ----------
 app.use((err, req, res, next) => {
+  // Expired or missing CSRF token: send them back rather than dead-ending
   if (err.code === 'EBADCSRFTOKEN' || err.message === 'invalid csrf token') {
-    req.flash('warning', 'Your session expired. Please try that again.');
+    if (req.flash) req.flash('warning', 'Your session expired. Please try that again.');
     return res.redirect(req.get('Referer') || '/');
+  }
+
+  // Multer rejected the upload (too large, wrong type)
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    if (req.flash) req.flash('error', 'That file is too large. Maximum size is 5 MB.');
+    return res.redirect(req.get('Referer') || '/admin/products');
   }
 
   console.error(err);

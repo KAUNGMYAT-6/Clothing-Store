@@ -190,57 +190,80 @@
       <div class="panel-title mb-1">Images</div>
       <div class="text-mute mb-3" style="font-size:.8rem">The main image is the one shown in the shop grid.</div>
 
-      <div class="row row-cols-3 row-cols-md-5 g-2 mb-3">
-        <% images.forEach(function (img) { %>
-          <div class="col">
-            <div class="img-tile">
-              <% if (img.is_primary) { %>
-                <span class="flag flag--new">Main</span>
-              <% } %>
-              <img src="<%= img.image_url %>" alt="<%= img.alt_text || product.name %>">
-              <span class="img-tile__tools">
-                <% if (!img.is_primary) { %>
-                  <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/primary">
+      <% if (images.length === 0) { %>
+        <p class="text-mute mb-3" style="font-size:.86rem">No images yet.</p>
+      <% } else { %>
+        <div class="row row-cols-3 row-cols-md-5 g-2 mb-3">
+          <% images.forEach(function (img) { %>
+            <div class="col">
+              <div class="img-tile">
+                <% if (img.is_primary) { %>
+                  <span class="flag flag--new">Main</span>
+                <% } %>
+                <img src="<%= img.image_url %>" alt="<%= img.alt_text || product.name %>">
+                <span class="img-tile__tools">
+                  <% if (!img.is_primary) { %>
+                    <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/primary">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" aria-label="Make this the main image">
+                        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 6.1 6.4.5-4.9 4.2 1.5 6.2L12 16.8 6.4 20l1.5-6.2L3 9.6l6.4-.5Z"/></svg>
+                      </button>
+                    </form>
+                  <% } %>
+                  <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/delete">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <button type="submit" aria-label="Make this the main image">
-                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 6.1 6.4.5-4.9 4.2 1.5 6.2L12 16.8 6.4 20l1.5-6.2L3 9.6l6.4-.5Z"/></svg>
+                    <button type="submit" class="is-danger" aria-label="Delete image">
+                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
                     </button>
                   </form>
-                <% } %>
-                <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/delete">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <button type="submit" class="is-danger" aria-label="Delete image">
-                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </form>
-              </span>
+                </span>
+              </div>
             </div>
-          </div>
-        <% }) %>
-      </div>
+          <% }) %>
+        </div>
+      <% } %>
 
       <div class="pt-3" style="border-top:1px solid var(--line-soft)">
         <div class="form-label mb-2">Add an image</div>
-        <form method="POST" action="/admin/products/<%= product.id %>/images" class="row g-2">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="col-12">
-            <label for="i-url" class="visually-hidden">Image URL</label>
-            <input id="i-url" name="image_url" class="form-control form-control-sm" placeholder="https://..." required>
+
+        <!-- Multipart form: the CSRF token goes in the query string,
+             because multer hasn't parsed the body when CSRF runs -->
+        <form method="POST"
+              action="/admin/products/<%= product.id %>/images?_csrf=<%= encodeURIComponent(csrfToken) %>"
+              enctype="multipart/form-data" class="row g-2">
+
+          <div class="col-md-6">
+            <label for="i-file" class="form-label">Upload a file</label>
+            <input id="i-file" type="file" name="image" class="form-control form-control-sm"
+                   accept="image/jpeg,image/png,image/webp,image/avif">
+            <div class="form-text">JPEG, PNG, WebP or AVIF. Max 5 MB.</div>
           </div>
+
+          <div class="col-md-6">
+            <label for="i-url" class="form-label">Or paste a URL</label>
+            <input id="i-url" name="image_url" class="form-control form-control-sm"
+                   placeholder="https://...">
+          </div>
+
           <div class="col-md-5">
             <label for="i-alt" class="visually-hidden">Alt text</label>
-            <input id="i-alt" name="alt_text" class="form-control form-control-sm" placeholder="Alt text (for screen readers)">
+            <input id="i-alt" name="alt_text" class="form-control form-control-sm"
+                   placeholder="Alt text (for screen readers)">
           </div>
+
           <div class="col-md-3">
             <label for="i-sort" class="visually-hidden">Sort order</label>
-            <input id="i-sort" name="sort_order" type="number" value="0" class="form-control form-control-sm" placeholder="Order">
+            <input id="i-sort" name="sort_order" type="number" value="0"
+                   class="form-control form-control-sm" placeholder="Order">
           </div>
+
           <div class="col-md-2 d-flex align-items-center">
             <div class="form-check mb-0">
               <input type="checkbox" name="is_primary" class="form-check-input" id="i-primary">
               <label class="form-check-label" for="i-primary" style="font-size:.82rem">Main</label>
             </div>
           </div>
+
           <div class="col-md-2 d-grid">
             <button class="btn btn-sm btn-indigo">Add</button>
           </div>
@@ -258,8 +281,7 @@
       <div class="product-card" style="pointer-events:none">
         <div class="product-card__media">
           <% const primary = images.find(function (i) { return i.is_primary; }) || images[0]; %>
-          <img src="<%= primary ? primary.image_url : 'https://placehold.co/600x800/EEF2FF/8785A8?text=No+image' %>"
-               alt="">
+          <img src="<%= primary ? primary.image_url : 'https://placehold.co/600x800/EEF2FF/8785A8?text=No+image' %>" alt="">
         </div>
         <div class="product-card__body">
           <div class="product-card__name"><%= product.name %></div>
@@ -267,14 +289,12 @@
           <div class="product-card__price">$<%= Number(product.price).toFixed(2) %></div>
         </div>
       </div>
-      <p class="text-mute mb-0 mt-3" style="font-size:.78rem">
-        Save your changes to update this.
-      </p>
+      <p class="text-mute mb-0 mt-3" style="font-size:.78rem">Save your changes to update this.</p>
     </div>
 
     <div class="panel p-4">
       <div class="panel-title mb-2" style="color:#991B1B">Danger zone</div>
-      <p class="text-mute mb-3" style="font-size:.82rem">
+      <p class="text-mute mb-0" style="font-size:.82rem">
         Products aren't deleted — untick "Live on the store" to hide one. Past orders
         keep their own copy of the details either way.
       </p>

@@ -24,18 +24,25 @@ router.get('/shop', async (req, res) => {
       params.push(department);
     }
 
+    // The image join prefers the primary image but falls back to the first
+    // one, so a product still shows a picture if nobody ticked "Main"
     const [products] = await pool.query(`
       SELECT p.id, p.name, p.slug, p.price,
-             c.name AS category,
+             c.name AS category, p.department,
              i.image_url, i.alt_text,
              COALESCE(SUM(v.stock_quantity), 0) AS total_stock
       FROM products p
       JOIN categories c ON c.id = p.category_id
-      LEFT JOIN product_images i
-        ON i.product_id = p.id AND i.is_primary = TRUE
+      LEFT JOIN product_images i ON i.id = (
+        SELECT id FROM product_images
+        WHERE product_id = p.id
+        ORDER BY is_primary DESC, sort_order ASC, id ASC
+        LIMIT 1
+      )
       LEFT JOIN product_variants v ON v.product_id = p.id
       WHERE ${conditions.join(' AND ')}
-      GROUP BY p.id, p.name, p.slug, p.price, c.name, i.image_url, i.alt_text
+      GROUP BY p.id, p.name, p.slug, p.price, c.name, p.department,
+               i.image_url, i.alt_text
       ORDER BY p.created_at DESC
     `, params);
 
@@ -74,8 +81,11 @@ router.get('/products/:slug', async (req, res) => {
       [product.id]
     );
 
+    // Primary image first, then the rest in their set order
     const [images] = await pool.query(
-      'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order',
+      `SELECT * FROM product_images
+       WHERE product_id = ?
+       ORDER BY is_primary DESC, sort_order ASC, id ASC`,
       [product.id]
     );
 
