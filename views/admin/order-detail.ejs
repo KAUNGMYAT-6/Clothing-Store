@@ -1,58 +1,136 @@
-<%- include('../partials/header') %>
+<%- include('partials/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Order #<%= order.id %></h1>
-  <a href="/admin/orders" class="btn btn-sm btn-outline-dark">Back to orders</a>
+<div style="font-size:.82rem; color:var(--ink-mute)" class="mb-3">
+  <a href="/admin" class="text-mute">Admin</a> <span style="opacity:.5">/</span>
+  <a href="/admin/orders" class="text-mute">Orders</a> <span style="opacity:.5">/</span>
+  <span class="text-soft">#<%= order.id %></span>
 </div>
 
-<div class="row">
-  <div class="col-md-7">
-    <table class="table">
-      <thead><tr><th>Item</th><th>Qty</th><th class="text-end">Total</th></tr></thead>
-      <tbody>
-        <% items.forEach(i => { %>
-          <tr>
-            <td><%= i.product_name %><br>
-              <span class="text-muted small"><%= i.color %> · <%= i.size %></span></td>
-            <td><%= i.quantity %></td>
-            <td class="text-end">$<%= (Number(i.unit_price) * i.quantity).toFixed(2) %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+<%
+  let statusCls = 'is-info';
+  if (order.status === 'pending')   statusCls = 'is-low';
+  if (order.status === 'delivered') statusCls = 'is-success';
+  if (order.status === 'cancelled') statusCls = 'is-out';
+%>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <h1>Order #<%= order.id %></h1>
+    <span class="badge-soft <%= statusCls %>"><%= order.status %></span>
   </div>
+  <a href="/admin/orders" class="btn btn-sm btn-plain">Back to orders</a>
+</div>
 
-  <div class="col-md-5">
-    <div class="card mb-3">
-      <div class="card-body">
-        <h6>Status</h6>
-        <form method="POST" action="/admin/orders/<%= order.id %>/status" class="d-flex gap-2">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <select name="status" class="form-select form-select-sm">
-            <% ['pending','paid','shipped','delivered','cancelled'].forEach(s => { %>
-              <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>><%= s %></option>
-            <% }) %>
-          </select>
-          <button class="btn btn-sm btn-dark">Update</button>
-        </form>
+<div class="row g-3">
+
+  <!-- ITEMS -->
+  <div class="col-lg-7">
+    <div class="panel overflow-hidden mb-3">
+      <div class="p-4 pb-3">
+        <div class="panel-title">Items</div>
       </div>
-    </div>
+      <table class="table-clean">
+        <thead>
+          <tr>
+            <th>Product</th><th class="text-center">Qty</th>
+            <th class="text-end">Unit</th><th class="text-end">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (i) { %>
+            <tr>
+              <td>
+                <div class="font-display fw-semibold"><%= i.product_name %></div>
+                <div class="text-mute" style="font-size:.78rem"><%= i.color %> · Size <%= i.size %></div>
+              </td>
+              <td class="text-center"><%= i.quantity %></td>
+              <td class="text-end text-mute">$<%= Number(i.unit_price).toFixed(2) %></td>
+              <td class="text-end font-display fw-bold">
+                $<%= (Number(i.unit_price) * i.quantity).toFixed(2) %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
 
-    <div class="card">
-      <div class="card-body">
-        <h6>Customer</h6>
-        <p class="small mb-2"><%= order.email %></p>
-        <h6>Shipping to</h6>
-        <p class="small text-muted mb-0">
-          <%= order.shipping_name %><br><%= order.shipping_address %>
-        </p>
-        <hr>
-        <div class="d-flex justify-content-between fw-bold">
-          <span>Total</span><span>$<%= Number(order.total).toFixed(2) %></span>
+      <div class="p-4 pt-3" style="border-top:1px solid var(--line-soft)">
+        <div class="d-flex justify-content-between mb-2" style="font-size:.9rem">
+          <span class="text-mute">Subtotal</span>
+          <span>$<%= Number(order.subtotal).toFixed(2) %></span>
+        </div>
+        <div class="d-flex justify-content-between mb-3" style="font-size:.9rem">
+          <span class="text-mute">Delivery</span>
+          <span>$<%= Number(order.shipping_fee).toFixed(2) %></span>
+        </div>
+        <div class="d-flex justify-content-between align-items-baseline pt-3"
+             style="border-top:1px solid var(--line)">
+          <span class="font-display fw-bold">Total</span>
+          <span class="font-display fw-bold" style="font-size:1.25rem">
+            $<%= Number(order.total).toFixed(2) %>
+          </span>
         </div>
       </div>
     </div>
+
+    <div class="panel p-4">
+      <div class="panel-title mb-2">Payment reference</div>
+      <div class="text-mute" style="font-size:.8rem; word-break:break-all">
+        <%= order.stripe_session_id || 'No Stripe session recorded' %>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDE -->
+  <div class="col-lg-5">
+
+    <div class="panel p-4 mb-3">
+      <div class="panel-title mb-3">Update status</div>
+      <form method="POST" action="/admin/orders/<%= order.id %>/status" class="d-flex gap-2">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label for="status" class="visually-hidden">Order status</label>
+        <select id="status" name="status" class="form-select">
+          <% ['pending','paid','shipped','delivered','cancelled'].forEach(function (s) { %>
+            <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+        <button class="btn btn-accent">Save</button>
+      </form>
+      <p class="text-mute mb-0 mt-3" style="font-size:.78rem">
+        Status is set automatically to <strong>paid</strong> by the Stripe webhook.
+        Change it here as you ship and deliver.
+      </p>
+    </div>
+
+    <div class="panel p-4 mb-3">
+      <div class="panel-title mb-3">Customer</div>
+      <div class="mb-3">
+        <div class="form-label mb-1">Email</div>
+        <div style="font-size:.9rem; word-break:break-all"><%= order.email %></div>
+      </div>
+      <div>
+        <div class="form-label mb-1">Account</div>
+        <div style="font-size:.9rem">
+          <% if (order.user_id) { %>
+            Registered user #<%= order.user_id %>
+          <% } else { %>
+            <span class="text-mute">No account linked</span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel p-4">
+      <div class="panel-title mb-3">Delivering to</div>
+      <p class="mb-2" style="font-size:.9rem"><strong><%= order.shipping_name %></strong></p>
+      <p class="text-soft mb-3" style="font-size:.9rem; white-space:pre-line"><%= order.shipping_address %></p>
+      <div class="text-mute" style="font-size:.78rem">
+        Placed <%= new Date(order.created_at).toLocaleString('en-SG', {
+          day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+        }) %>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<%- include('../partials/footer') %>
+<%- include('partials/footer') %>

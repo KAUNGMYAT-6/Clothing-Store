@@ -1,141 +1,286 @@
-<%- include('../partials/header') %>
+<%- include('partials/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Edit product</h1>
-  <div>
-    <a href="/products/<%= product.slug %>" class="btn btn-sm btn-outline-dark" target="_blank">View on site</a>
-    <a href="/admin/products" class="btn btn-sm btn-outline-dark">Back to products</a>
+<div style="font-size:.82rem; color:var(--ink-mute)" class="mb-3">
+  <a href="/admin" class="text-mute">Admin</a> <span style="opacity:.5">/</span>
+  <a href="/admin/products" class="text-mute">Products</a> <span style="opacity:.5">/</span>
+  <span class="text-soft"><%= product.name %></span>
+</div>
+
+<%
+  const totalStock = variants.reduce(function (s, v) { return s + Number(v.stock_quantity); }, 0);
+%>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <h1>Edit product</h1>
+    <% if (product.is_active) { %>
+      <span class="badge-soft is-success">Live</span>
+    <% } else { %>
+      <span class="badge-soft is-out">Hidden</span>
+    <% } %>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/products/<%= product.slug %>" target="_blank" rel="noopener" class="btn btn-sm btn-plain">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      View on store
+    </a>
+    <a href="/admin/products" class="btn btn-sm btn-plain">Back</a>
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-6">
-    <h5 class="mb-3">Details</h5>
-    <form method="POST" action="/admin/products/<%= product.id %>">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="mb-3">
-        <label class="form-label">Name</label>
-        <input type="text" name="name" class="form-control" required value="<%= product.name %>">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Slug</label>
-        <input type="text" name="slug" class="form-control" required
-               pattern="[a-z0-9-]+" value="<%= product.slug %>">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Description</label>
-        <textarea name="description" class="form-control" rows="3"><%= product.description %></textarea>
-      </div>
-      <div class="row">
-        <div class="col-4 mb-3">
-          <label class="form-label">Price</label>
-          <input type="number" name="price" step="0.01" min="0" class="form-control"
-                 required value="<%= product.price %>">
+<div class="row g-3">
+
+  <!-- LEFT -->
+  <div class="col-lg-8">
+
+    <!-- DETAILS -->
+    <div class="panel p-4 mb-3">
+      <div class="panel-title mb-3">Product details</div>
+
+      <form method="POST" action="/admin/products/<%= product.id %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="mb-3">
+          <label for="name" class="form-label">Name</label>
+          <input id="name" type="text" name="name" class="form-control" required value="<%= product.name %>">
         </div>
-        <div class="col-4 mb-3">
-          <label class="form-label">Category</label>
-          <select name="category_id" class="form-select">
-            <% categories.forEach(c => { %>
-              <option value="<%= c.id %>" <%= product.category_id == c.id ? 'selected' : '' %>>
-                <%= c.name %></option>
-            <% }) %>
-          </select>
+
+        <div class="mb-3">
+          <label for="slug" class="form-label">URL slug</label>
+          <input id="slug" type="text" name="slug" class="form-control" required
+                 pattern="[a-z0-9-]+" value="<%= product.slug %>">
+          <div class="form-text">/products/<strong><%= product.slug %></strong></div>
         </div>
-        <div class="col-4 mb-3">
-          <label class="form-label">Department</label>
-          <select name="department" class="form-select">
-            <% ['men','women','unisex'].forEach(d => { %>
-              <option value="<%= d %>" <%= product.department === d ? 'selected' : '' %>>
-                <%= d %></option>
-            <% }) %>
-          </select>
+
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <textarea id="description" name="description" class="form-control" rows="3"><%= product.description %></textarea>
         </div>
-      </div>
-      <div class="form-check mb-3">
-        <input type="checkbox" name="is_active" class="form-check-input"
-               id="active" <%= product.is_active ? 'checked' : '' %>>
-        <label class="form-check-label" for="active">Active (visible on the site)</label>
-      </div>
-      <button class="btn btn-dark">Save changes</button>
-    </form>
-  </div>
 
-  <div class="col-md-6">
-    <h5 class="mb-3">Variants</h5>
-
-    <% if (variants.length === 0) { %>
-      <div class="alert alert-warning small">
-        This product has no variants, so it can't be bought. Add at least one below.
-      </div>
-    <% } %>
-
-    <table class="table table-sm align-middle">
-      <tbody>
-        <% variants.forEach(v => { %>
-          <tr>
-            <td>
-              <%= v.color %> &middot; <%= v.size %><br>
-              <span class="text-muted small"><%= v.sku %></span>
-            </td>
-            <td style="width: 160px;">
-              <form method="POST"
-                    action="/admin/products/<%= product.id %>/variants/<%= v.id %>/stock"
-                    class="d-flex gap-1">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <input type="number" name="stock_quantity" min="0"
-                       value="<%= v.stock_quantity %>" class="form-control form-control-sm">
-                <button class="btn btn-sm btn-outline-dark">Set</button>
-              </form>
-            </td>
-            <td class="text-end">
-              <form method="POST"
-                    action="/admin/products/<%= product.id %>/variants/<%= v.id %>/delete">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button class="btn btn-sm btn-link text-danger p-0">Delete</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-
-    <form method="POST" action="/admin/products/<%= product.id %>/variants" class="row g-2 mb-4">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="col-3"><input name="size" class="form-control form-control-sm" placeholder="Size" required></div>
-      <div class="col-3"><input name="color" class="form-control form-control-sm" placeholder="Colour" required></div>
-      <div class="col-3"><input name="sku" class="form-control form-control-sm" placeholder="SKU" required></div>
-      <div class="col-2"><input name="stock_quantity" type="number" min="0" value="0" class="form-control form-control-sm"></div>
-      <div class="col-1"><button class="btn btn-sm btn-dark w-100">+</button></div>
-    </form>
-
-    <h5 class="mb-3">Images</h5>
-    <div class="row g-2 mb-3">
-      <% images.forEach(img => { %>
-        <div class="col-4">
-          <img src="<%= img.image_url %>" class="img-fluid rounded mb-1" alt="<%= img.alt_text %>">
-          <% if (img.is_primary) { %><span class="badge bg-dark">Primary</span><% } %>
-          <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/delete">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button class="btn btn-sm btn-link text-danger p-0">Delete</button>
-          </form>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label for="price" class="form-label">Price (SGD)</label>
+            <input id="price" type="number" name="price" step="0.01" min="0"
+                   class="form-control" required value="<%= product.price %>">
+          </div>
+          <div class="col-md-4">
+            <label for="category_id" class="form-label">Category</label>
+            <select id="category_id" name="category_id" class="form-select">
+              <% categories.forEach(function (c) { %>
+                <option value="<%= c.id %>" <%= product.category_id == c.id ? 'selected' : '' %>><%= c.name %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="department" class="form-label">Department</label>
+            <select id="department" name="department" class="form-select">
+              <% ['women','men','unisex'].forEach(function (d) { %>
+                <option value="<%= d %>" <%= product.department === d ? 'selected' : '' %>><%= d %></option>
+              <% }) %>
+            </select>
+          </div>
         </div>
-      <% }) %>
+
+        <div class="form-check mb-4">
+          <input type="checkbox" name="is_active" class="form-check-input" id="is_active"
+                 <%= product.is_active ? 'checked' : '' %>>
+          <label class="form-check-label" for="is_active" style="font-size:.9rem">
+            Live on the store
+          </label>
+        </div>
+
+        <button class="btn btn-accent">Save changes</button>
+      </form>
     </div>
 
-    <form method="POST" action="/admin/products/<%= product.id %>/images" class="row g-2">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="col-12"><input name="image_url" class="form-control form-control-sm" placeholder="Image URL" required></div>
-      <div class="col-6"><input name="alt_text" class="form-control form-control-sm" placeholder="Alt text"></div>
-      <div class="col-3"><input name="sort_order" type="number" value="0" class="form-control form-control-sm"></div>
-      <div class="col-3">
-        <div class="form-check form-check-inline">
-          <input type="checkbox" name="is_primary" class="form-check-input" id="primary">
-          <label class="form-check-label small" for="primary">Primary</label>
+    <!-- VARIANTS -->
+    <div class="panel overflow-hidden mb-3">
+      <div class="d-flex align-items-center justify-content-between p-4 pb-3">
+        <div>
+          <div class="panel-title mb-1">Variants &amp; stock</div>
+          <div class="text-mute" style="font-size:.8rem">
+            <%= variants.length %> variant<%= variants.length === 1 ? '' : 's' %> · <%= totalStock %> in stock
+          </div>
         </div>
       </div>
-      <div class="col-12"><button class="btn btn-sm btn-dark">Add image</button></div>
-    </form>
+
+      <% if (variants.length === 0) { %>
+        <div class="px-4 pb-3">
+          <div class="flash flash--warning">
+            <span class="flash__icon" aria-hidden="true">!</span>
+            <span class="flash__text">No variants yet, so this product can't be bought. Add one below.</span>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table-clean">
+            <thead>
+              <tr>
+                <th>Colour</th><th>Size</th><th>SKU</th>
+                <th class="text-center">Stock</th><th style="width:52px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% variants.forEach(function (v) { %>
+                <tr>
+                  <td class="fw-semibold"><%= v.color %></td>
+                  <td class="font-display fw-bold"><%= v.size %></td>
+                  <td class="text-mute" style="font-size:.8rem"><%= v.sku %></td>
+                  <td class="text-center">
+                    <form method="POST" action="/admin/products/<%= product.id %>/variants/<%= v.id %>/stock"
+                          class="d-inline-flex align-items-center gap-2">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <span class="stepper" data-stepper data-autosubmit>
+                        <button type="button" data-step="down" aria-label="Decrease stock for <%= v.color %> <%= v.size %>">&minus;</button>
+                        <input type="number" name="stock_quantity" value="<%= v.stock_quantity %>" min="0"
+                               aria-label="Stock for <%= v.color %> <%= v.size %>">
+                        <button type="button" data-step="up" aria-label="Increase stock for <%= v.color %> <%= v.size %>">+</button>
+                      </span>
+                      <% if (Number(v.stock_quantity) === 0) { %>
+                        <span class="badge-soft is-danger">Out</span>
+                      <% } %>
+                      <noscript><button class="btn btn-sm btn-soft">Set</button></noscript>
+                    </form>
+                  </td>
+                  <td class="text-end">
+                    <form method="POST" action="/admin/products/<%= product.id %>/variants/<%= v.id %>/delete">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn-icon btn-icon--danger" aria-label="Delete <%= v.color %> <%= v.size %> variant">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+
+      <div class="p-4 pt-3" style="border-top:1px solid var(--line-soft); background:#F8F9FE">
+        <div class="form-label mb-2">Add a variant</div>
+        <form method="POST" action="/admin/products/<%= product.id %>/variants" class="row g-2">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-6 col-md-3">
+            <label for="v-color" class="visually-hidden">Colour</label>
+            <input id="v-color" name="color" class="form-control form-control-sm" placeholder="Colour" required>
+          </div>
+          <div class="col-6 col-md-2">
+            <label for="v-size" class="visually-hidden">Size</label>
+            <input id="v-size" name="size" class="form-control form-control-sm" placeholder="Size" required>
+          </div>
+          <div class="col-7 col-md-4">
+            <label for="v-sku" class="visually-hidden">SKU</label>
+            <input id="v-sku" name="sku" class="form-control form-control-sm" placeholder="SKU" required>
+          </div>
+          <div class="col-5 col-md-2">
+            <label for="v-stock" class="visually-hidden">Stock</label>
+            <input id="v-stock" name="stock_quantity" type="number" min="0" value="0"
+                   class="form-control form-control-sm" placeholder="Stock">
+          </div>
+          <div class="col-md-1 d-grid">
+            <button class="btn btn-sm btn-indigo">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- IMAGES -->
+    <div class="panel p-4">
+      <div class="panel-title mb-1">Images</div>
+      <div class="text-mute mb-3" style="font-size:.8rem">The main image is the one shown in the shop grid.</div>
+
+      <div class="row row-cols-3 row-cols-md-5 g-2 mb-3">
+        <% images.forEach(function (img) { %>
+          <div class="col">
+            <div class="img-tile">
+              <% if (img.is_primary) { %>
+                <span class="flag flag--new">Main</span>
+              <% } %>
+              <img src="<%= img.image_url %>" alt="<%= img.alt_text || product.name %>">
+              <span class="img-tile__tools">
+                <% if (!img.is_primary) { %>
+                  <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/primary">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" aria-label="Make this the main image">
+                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 6.1 6.4.5-4.9 4.2 1.5 6.2L12 16.8 6.4 20l1.5-6.2L3 9.6l6.4-.5Z"/></svg>
+                    </button>
+                  </form>
+                <% } %>
+                <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/delete">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="is-danger" aria-label="Delete image">
+                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                  </button>
+                </form>
+              </span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+
+      <div class="pt-3" style="border-top:1px solid var(--line-soft)">
+        <div class="form-label mb-2">Add an image</div>
+        <form method="POST" action="/admin/products/<%= product.id %>/images" class="row g-2">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-12">
+            <label for="i-url" class="visually-hidden">Image URL</label>
+            <input id="i-url" name="image_url" class="form-control form-control-sm" placeholder="https://..." required>
+          </div>
+          <div class="col-md-5">
+            <label for="i-alt" class="visually-hidden">Alt text</label>
+            <input id="i-alt" name="alt_text" class="form-control form-control-sm" placeholder="Alt text (for screen readers)">
+          </div>
+          <div class="col-md-3">
+            <label for="i-sort" class="visually-hidden">Sort order</label>
+            <input id="i-sort" name="sort_order" type="number" value="0" class="form-control form-control-sm" placeholder="Order">
+          </div>
+          <div class="col-md-2 d-flex align-items-center">
+            <div class="form-check mb-0">
+              <input type="checkbox" name="is_primary" class="form-check-input" id="i-primary">
+              <label class="form-check-label" for="i-primary" style="font-size:.82rem">Main</label>
+            </div>
+          </div>
+          <div class="col-md-2 d-grid">
+            <button class="btn btn-sm btn-indigo">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT RAIL -->
+  <div class="col-lg-4">
+
+    <div class="panel p-4 mb-3">
+      <div class="panel-title mb-3">Store preview</div>
+      <div class="product-card" style="pointer-events:none">
+        <div class="product-card__media">
+          <% const primary = images.find(function (i) { return i.is_primary; }) || images[0]; %>
+          <img src="<%= primary ? primary.image_url : 'https://placehold.co/600x800/EEF2FF/8785A8?text=No+image' %>"
+               alt="">
+        </div>
+        <div class="product-card__body">
+          <div class="product-card__name"><%= product.name %></div>
+          <div class="product-card__meta"><%= product.department %></div>
+          <div class="product-card__price">$<%= Number(product.price).toFixed(2) %></div>
+        </div>
+      </div>
+      <p class="text-mute mb-0 mt-3" style="font-size:.78rem">
+        Save your changes to update this.
+      </p>
+    </div>
+
+    <div class="panel p-4">
+      <div class="panel-title mb-2" style="color:#991B1B">Danger zone</div>
+      <p class="text-mute mb-3" style="font-size:.82rem">
+        Products aren't deleted — untick "Live on the store" to hide one. Past orders
+        keep their own copy of the details either way.
+      </p>
+    </div>
+
   </div>
 </div>
 
-<%- include('../partials/footer') %>
+<%- include('partials/footer') %>
