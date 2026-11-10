@@ -8,53 +8,78 @@
     <h1>Shop all</h1>
   </div>
   <div class="text-mute pb-1" style="font-size:.85rem">
-    <strong class="text-dark"><%= products.length %></strong> product<%= products.length === 1 ? '' : 's' %>
+    <% if (pagination.total === 0) { %>
+      No products
+    <% } else { %>
+      Showing <strong class="text-dark"><%= pagination.from %>–<%= pagination.to %></strong>
+      of <%= pagination.total %>
+    <% } %>
   </div>
 </div>
 
 <!-- FILTER BAR -->
 <div class="surface p-3 mb-3">
   <form method="GET" action="/shop" class="row g-2 align-items-center">
-    <div class="col-md-5">
+    <div class="col-md-4">
       <label for="q" class="visually-hidden">Search products</label>
       <input id="q" type="search" name="q" class="form-control" placeholder="Search products"
              value="<%= filters.q || '' %>">
     </div>
-    <div class="col-md-3">
+
+    <div class="col-md-2">
       <label for="category" class="visually-hidden">Category</label>
       <select id="category" name="category" class="form-select">
         <option value="">All categories</option>
-        <% categories.forEach(c => { %>
+        <% categories.forEach(function (c) { %>
           <option value="<%= c.id %>" <%= filters.category == c.id ? 'selected' : '' %>><%= c.name %></option>
         <% }) %>
       </select>
     </div>
+
     <div class="col-md-2">
       <label for="department" class="visually-hidden">Department</label>
       <select id="department" name="department" class="form-select">
         <option value="">All departments</option>
-        <% ['women','men','unisex'].forEach(d => { %>
-          <option value="<%= d %>" <%= filters.department === d ? 'selected' : '' %>><%= d.charAt(0).toUpperCase() + d.slice(1) %></option>
+        <% ['women','men','unisex'].forEach(function (d) { %>
+          <option value="<%= d %>" <%= filters.department === d ? 'selected' : '' %>>
+            <%= d.charAt(0).toUpperCase() + d.slice(1) %>
+          </option>
         <% }) %>
       </select>
     </div>
+
+    <div class="col-md-2">
+      <label for="sort" class="visually-hidden">Sort by</label>
+      <select id="sort" name="sort" class="form-select">
+        <% Object.keys(sorts).forEach(function (key) { %>
+          <option value="<%= key %>" <%= filters.sort === key ? 'selected' : '' %>>
+            <%= sorts[key].label %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
     <div class="col-md-2 d-grid">
-      <button class="btn btn-accent">Filter</button>
+      <button class="btn btn-accent">Apply</button>
     </div>
   </form>
 </div>
 
 <!-- ACTIVE FILTERS -->
-<% const active = [];
-   if (filters.q) active.push({ label: '"' + filters.q + '"', key: 'q' });
-   if (filters.category) { const c = categories.find(x => x.id == filters.category); if (c) active.push({ label: c.name, key: 'category' }); }
-   if (filters.department) active.push({ label: filters.department, key: 'department' });
+<%
+  const active = [];
+  if (filters.q) active.push('"' + filters.q + '"');
+  if (filters.category) {
+    const c = categories.find(function (x) { return x.id == filters.category; });
+    if (c) active.push(c.name);
+  }
+  if (filters.department) active.push(filters.department);
 %>
 <% if (active.length) { %>
   <div class="d-flex align-items-center gap-2 flex-wrap mb-4">
     <span class="text-mute" style="font-size:.78rem; font-weight:500">Active:</span>
-    <% active.forEach(a => { %>
-      <span class="filter-chip"><%= a.label %></span>
+    <% active.forEach(function (a) { %>
+      <span class="filter-chip"><%= a %></span>
     <% }) %>
     <a href="/shop" class="ms-1" style="font-size:.78rem; font-weight:600">Clear all</a>
   </div>
@@ -62,19 +87,23 @@
 
 <!-- GRID -->
 <% if (products.length === 0) { %>
+
   <div class="empty-state">
     <h3 class="h5 mb-2">No matches</h3>
     <p class="text-mute mb-3">Nothing fits those filters. Try widening your search.</p>
     <a href="/shop" class="btn btn-soft">Clear filters</a>
   </div>
+
 <% } else { %>
-  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
-    <% products.forEach((product, i) => {
+
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+    <% products.forEach(function (product, i) {
          const stock = Number(product.total_stock);
+         const delay = i % 4 === 0 ? '' : 'reveal-' + (i % 4);
     %>
       <div class="col">
         <a href="/products/<%= product.slug %>" class="text-decoration-none">
-          <article class="product-card reveal <%= 'reveal-' + (i % 4 === 0 ? '' : Math.min(i % 4, 3)) %> <%= stock === 0 ? 'is-out' : '' %>">
+          <article class="product-card reveal <%= delay %> <%= stock === 0 ? 'is-out' : '' %>">
             <div class="product-card__media">
               <% if (stock === 0) { %>
                 <span class="flag flag--out">Sold out</span>
@@ -90,13 +119,55 @@
             <div class="product-card__body">
               <h3 class="product-card__name"><%= product.name %></h3>
               <div class="product-card__meta"><%= product.category %> · <%= product.department %></div>
-              <div class="product-card__price <%= stock === 0 ? 'text-mute' : '' %>">$<%= Number(product.price).toFixed(2) %></div>
+              <div class="product-card__price <%= stock === 0 ? 'text-mute' : '' %>">
+                $<%= Number(product.price).toFixed(2) %>
+              </div>
             </div>
           </article>
         </a>
       </div>
     <% }) %>
   </div>
+
+  <!-- PAGINATION -->
+  <% if (pagination.totalPages > 1) {
+       const base = pagination.baseQuery ? '/shop?' + pagination.baseQuery + '&' : '/shop?';
+       const cur = pagination.currentPage;
+
+       // Show at most 5 numbers, centred on the current page
+       let start = Math.max(1, cur - 2);
+       let end = Math.min(pagination.totalPages, start + 4);
+       start = Math.max(1, end - 4);
+  %>
+    <nav class="d-flex justify-content-center align-items-center gap-2 mb-5" aria-label="Pages">
+
+      <% if (cur > 1) { %>
+        <a href="<%= base %>page=<%= cur - 1 %>" class="pagedot" aria-label="Previous page">‹</a>
+      <% } %>
+
+      <% if (start > 1) { %>
+        <a href="<%= base %>page=1" class="pagedot">1</a>
+        <% if (start > 2) { %><span class="text-mute">…</span><% } %>
+      <% } %>
+
+      <% for (let n = start; n <= end; n++) { %>
+        <a href="<%= base %>page=<%= n %>"
+           class="pagedot <%= n === cur ? 'is-on' : '' %>"
+           <%= n === cur ? 'aria-current="page"' : '' %>><%= n %></a>
+      <% } %>
+
+      <% if (end < pagination.totalPages) { %>
+        <% if (end < pagination.totalPages - 1) { %><span class="text-mute">…</span><% } %>
+        <a href="<%= base %>page=<%= pagination.totalPages %>" class="pagedot"><%= pagination.totalPages %></a>
+      <% } %>
+
+      <% if (cur < pagination.totalPages) { %>
+        <a href="<%= base %>page=<%= cur + 1 %>" class="pagedot" aria-label="Next page">›</a>
+      <% } %>
+
+    </nav>
+  <% } %>
+
 <% } %>
 
 <%- include('../partials/footer') %>

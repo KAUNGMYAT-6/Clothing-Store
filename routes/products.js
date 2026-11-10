@@ -3,10 +3,24 @@ const pool = require('../db/pool');
 
 const router = express.Router();
 
-// Product listing with search and filters
+const PER_PAGE = 12;   // 4 across × 3 rows on desktop
+
+// Whitelist of sort options. User input never goes into ORDER BY directly —
+// it isn't a value, so it can't be a ? placeholder, which makes it an
+// injection risk if interpolated.
+const SORTS = {
+  newest:     { label: 'Newest first',       sql: 'p.created_at DESC' },
+  price_asc:  { label: 'Price: low to high', sql: 'p.price ASC' },
+  price_desc: { label: 'Price: high to low', sql: 'p.price DESC' },
+  name:       { label: 'Name: A to Z',       sql: 'p.name ASC' }
+};
+
 router.get('/shop', async (req, res) => {
   try {
     const { q, category, department } = req.query;
+
+    const sort = SORTS[req.query.sort] ? req.query.sort : 'newest';
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
 
     const conditions = ['p.is_active = TRUE'];
     const params = [];
@@ -24,8 +38,23 @@ router.get('/shop', async (req, res) => {
       params.push(department);
     }
 
-    // The image join prefers the primary image but falls back to the first
-    // one, so a product still shows a picture if nobody ticked "Main"
+    const where = conditions.join(' AND ');
+
+    // Total first, so we know how many pages there are
+    const [[countRow]] = await pool.query(`
+      SELECT COUNT(DISTINCT p.id) AS total
+      FROM products p
+      JOIN categories c ON c.id = p.category_id
+      WHERE ${where}
+    `, params);
+
+    const total = Number(countRow.total);
+    const totalPages = Math.max(Math.ceil(total / PER_PAGE), 1);
+    const currentPage = Math.min(page, totalPages);
+    const offset = (currentPage - 1) * PER_PAGE;
+
+    // PER_PAGE and offset are integers we computed, never raw user input,
+    // so interpolating them is safe
     const [products] = await pool.query(`
       SELECT p.id, p.name, p.slug, p.price,
              c.name AS category, p.department,
@@ -40,21 +69,39 @@ router.get('/shop', async (req, res) => {
         LIMIT 1
       )
       LEFT JOIN product_variants v ON v.product_id = p.id
-      WHERE ${conditions.join(' AND ')}
+      WHERE ${where}
       GROUP BY p.id, p.name, p.slug, p.price, c.name, p.department,
                i.image_url, i.alt_text
-      ORDER BY p.created_at DESC
+      ORDER BY ${SORTS[sort].sql}
+      LIMIT ${PER_PAGE} OFFSET ${offset}
     `, params);
 
     const [categories] = await pool.query(
       'SELECT id, name FROM categories ORDER BY name'
     );
 
+    // Every filter except page, so page links keep the current filters
+    const baseParams = new URLSearchParams();
+    if (q) baseParams.set('q', q);
+    if (category) baseParams.set('category', category);
+    if (department) baseParams.set('department', department);
+    if (sort !== 'newest') baseParams.set('sort', sort);
+
     res.render('products/index', {
       title: 'Shop',
       products,
       categories,
-      filters: { q, category, department }
+      filters: { q, category, department, sort },
+      sorts: SORTS,
+      pagination: {
+        total,
+        totalPages,
+        currentPage,
+        perPage: PER_PAGE,
+        from: total === 0 ? 0 : offset + 1,
+        to: Math.min(offset + PER_PAGE, total),
+        baseQuery: baseParams.toString()
+      }
     });
   } catch (err) {
     console.error(err);
@@ -81,7 +128,6 @@ router.get('/products/:slug', async (req, res) => {
       [product.id]
     );
 
-    // Primary image first, then the rest in their set order
     const [images] = await pool.query(
       `SELECT * FROM product_images
        WHERE product_id = ?
