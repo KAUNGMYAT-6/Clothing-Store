@@ -91,7 +91,7 @@
     </div>
   <% } else { %>
     <div class="row row-cols-2 row-cols-md-4 g-3">
-      <% featured.forEach((product, i) => { %>
+      <% featured.forEach(function (product, i) { %>
         <div class="col">
           <a href="/products/<%= product.slug %>" class="text-decoration-none">
             <article class="product-card reveal <%= i > 0 ? 'reveal-' + Math.min(i, 3) : '' %>">
@@ -105,6 +105,12 @@
                 <h3 class="product-card__name"><%= product.name %></h3>
                 <div class="product-card__meta"><%= product.category %></div>
                 <div class="product-card__price">$<%= Number(product.price).toFixed(2) %></div>
+                <% if (Number(product.review_count) > 0) { %>
+                  <div class="card-rating">
+                    <%- include('partials/stars', { value: product.avg_rating, size: 11 }) %>
+                    <span>(<%= product.review_count %>)</span>
+                  </div>
+                <% } %>
               </div>
             </article>
           </a>
@@ -123,7 +129,7 @@
     </div>
   </div>
   <div class="row row-cols-2 row-cols-md-4 g-3">
-    <% categories.forEach((c, i) => { %>
+    <% categories.forEach(function (c, i) { %>
       <div class="col">
         <a href="/shop?category=<%= c.id %>" class="category-tile reveal <%= i > 0 ? 'reveal-' + Math.min(i, 3) : '' %>">
           <div class="category-tile__name"><%= c.name %></div>

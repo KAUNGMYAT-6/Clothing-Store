@@ -270,11 +270,18 @@ router.get('/products/:id/edit', async (req, res) => {
        ORDER BY is_primary DESC, sort_order ASC, id ASC`,
       [product.id]
     );
+    const [reviews] = await pool.query(`
+      SELECT r.id, r.rating, r.body, r.created_at, u.name AS author
+      FROM reviews r
+      JOIN users u ON u.id = r.user_id
+      WHERE r.product_id = ?
+      ORDER BY r.created_at DESC
+    `, [product.id]);
 
     res.render('admin/product-edit', {
       title: `Edit ${product.name}`,
       active: 'products',
-      product, categories, variants, images, error: null
+      product, categories, variants, images, reviews, error: null
     });
   } catch (err) {
     console.error(err);
@@ -507,6 +514,21 @@ router.post('/products/:id/images/:imageId/delete', async (req, res) => {
     console.error(err);
     req.flash('error', 'Could not delete that image.');
     res.redirect(`/admin/products/${req.params.id}/edit`);
+  }
+});
+
+// ============================================================
+// Review moderation
+// ============================================================
+router.post('/reviews/:id/delete', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM reviews WHERE id = ?', [req.params.id]);
+    req.flash('info', 'Review removed.');
+    res.redirect(req.get('Referer') || '/admin/products');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Could not remove that review.');
+    res.redirect(req.get('Referer') || '/admin/products');
   }
 });
 

@@ -10,6 +10,8 @@ router.get('/', async (req, res) => {
       SELECT p.id, p.name, p.slug, p.price,
              c.name AS category,
              i.image_url, i.alt_text,
+             (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE product_id = p.id) AS avg_rating,
+             (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) AS review_count,
              COALESCE(SUM(v.stock_quantity), 0) AS total_stock
       FROM products p
       JOIN categories c ON c.id = p.category_id

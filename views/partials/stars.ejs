@@ -1,0 +1,19 @@
+<%
+  // Two rows of five stars: a grey one underneath, an orange one on top
+  // clipped to a percentage. Gives partial stars (3.7 of 5) with no
+  // half-star maths.
+  const pct = Math.max(0, Math.min(100, (Number(value) / 5) * 100));
+  const px = typeof size !== 'undefined' ? size : 15;
+%>
+<span class="stars" role="img" aria-label="<%= Number(value).toFixed(1) %> out of 5">
+  <span class="stars__row" aria-hidden="true">
+    <% for (let i = 0; i < 5; i++) { %>
+      <svg width="<%= px %>" height="<%= px %>" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.6 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 21l1.5-6.8L2.2 9.6l6.9-.7z"/></svg>
+    <% } %>
+  </span>
+  <span class="stars__row stars__row--fill" style="width:<%= pct %>%" aria-hidden="true">
+    <% for (let i = 0; i < 5; i++) { %>
+      <svg width="<%= px %>" height="<%= px %>" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.6 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 21l1.5-6.8L2.2 9.6l6.9-.7z"/></svg>
+    <% } %>
+  </span>
+</span>

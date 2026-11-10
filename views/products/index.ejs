@@ -122,6 +122,12 @@
               <div class="product-card__price <%= stock === 0 ? 'text-mute' : '' %>">
                 $<%= Number(product.price).toFixed(2) %>
               </div>
+              <% if (Number(product.review_count) > 0) { %>
+                <div class="card-rating">
+                  <%- include('../partials/stars', { value: product.avg_rating, size: 11 }) %>
+                  <span>(<%= product.review_count %>)</span>
+                </div>
+              <% } %>
             </div>
           </article>
         </a>
@@ -134,7 +140,7 @@
        const base = pagination.baseQuery ? '/shop?' + pagination.baseQuery + '&' : '/shop?';
        const cur = pagination.currentPage;
 
-       // Show at most 5 numbers, centred on the current page
+       // At most 5 numbers, centred on the current page
        let start = Math.max(1, cur - 2);
        let end = Math.min(pagination.totalPages, start + 4);
        start = Math.max(1, end - 4);

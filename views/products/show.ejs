@@ -7,6 +7,7 @@
 </div>
 
 <div class="row g-4 g-lg-5">
+
   <!-- IMAGES -->
   <div class="col-lg-6">
     <% if (images.length) { %>
@@ -16,7 +17,7 @@
       </div>
       <% if (images.length > 1) { %>
         <div class="row g-2">
-          <% images.slice(1).forEach(img => { %>
+          <% images.slice(1).forEach(function (img) { %>
             <div class="col-4">
               <div class="surface overflow-hidden">
                 <img src="<%= img.image_url %>" class="img-fluid w-100"
@@ -38,10 +39,22 @@
   <div class="col-lg-6">
     <div class="eyebrow mb-2"><%= product.category %> · <%= product.department %></div>
     <h1 class="mb-2"><%= product.name %></h1>
-    <div class="font-display fw-bold mb-3" style="font-size:1.5rem">$<%= Number(product.price).toFixed(2) %></div>
+
+    <% if (rating.count > 0) { %>
+      <a href="#reviews" class="d-inline-flex align-items-center gap-2 mb-2 text-decoration-none">
+        <%- include('../partials/stars', { value: rating.average, size: 15 }) %>
+        <span class="text-mute" style="font-size:.82rem">
+          <%= rating.average.toFixed(1) %> · <%= rating.count %> review<%= rating.count === 1 ? '' : 's' %>
+        </span>
+      </a>
+    <% } %>
+
+    <div class="font-display fw-bold mb-3" style="font-size:1.5rem">
+      $<%= Number(product.price).toFixed(2) %>
+    </div>
     <p class="text-soft mb-4"><%= product.description %></p>
 
-    <% const totalStock = variants.reduce((s, v) => s + Number(v.stock_quantity), 0); %>
+    <% const totalStock = variants.reduce(function (s, v) { return s + Number(v.stock_quantity); }, 0); %>
 
     <% if (variants.length === 0) { %>
 
@@ -61,7 +74,7 @@
           <label for="variant" class="form-label">Size and colour</label>
           <select id="variant" name="variant_id" class="form-select" required>
             <option value="">Choose an option</option>
-            <% variants.forEach(v => {
+            <% variants.forEach(function (v) {
                  const s = Number(v.stock_quantity);
             %>
               <option value="<%= v.id %>" <%= s === 0 ? 'disabled' : '' %>>
@@ -97,5 +110,153 @@
     <% } %>
   </div>
 </div>
+
+<!-- ============================================================
+     REVIEWS
+     ============================================================ -->
+<section id="reviews" class="mt-5 pt-4" style="border-top:1px solid var(--line)">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow mb-1">Reviews</div>
+      <h2>What customers say</h2>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- SUMMARY -->
+    <div class="col-lg-4">
+      <div class="surface p-4">
+        <% if (rating.count === 0) { %>
+          <p class="text-mute mb-0" style="font-size:.9rem">No reviews yet.</p>
+        <% } else { %>
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="font-display fw-bold" style="font-size:2.4rem; line-height:1">
+              <%= rating.average.toFixed(1) %>
+            </div>
+            <div>
+              <%- include('../partials/stars', { value: rating.average, size: 16 }) %>
+              <div class="text-mute mt-1" style="font-size:.8rem">
+                <%= rating.count %> review<%= rating.count === 1 ? '' : 's' %>
+              </div>
+            </div>
+          </div>
+
+          <% [5,4,3,2,1].forEach(function (star) {
+               const n = rating.breakdown[star];
+               const pct = rating.count ? (n / rating.count) * 100 : 0;
+          %>
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="text-mute" style="font-size:.76rem; width:12px"><%= star %></span>
+              <div class="rating-bar flex-grow-1">
+                <div class="rating-bar__fill" style="width:<%= pct %>%"></div>
+              </div>
+              <span class="text-mute" style="font-size:.76rem; width:18px; text-align:right"><%= n %></span>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- FORM + LIST -->
+    <div class="col-lg-8">
+
+      <% if (!user) { %>
+
+        <div class="surface p-4 mb-3 text-center">
+          <p class="text-mute mb-0" style="font-size:.9rem">
+            Bought this piece? <a href="/login">Log in</a> to leave a review.
+          </p>
+        </div>
+
+      <% } else if (canReview) { %>
+
+        <div class="surface p-4 mb-3">
+          <div class="panel-title mb-3">
+            <%= myReview ? 'Update your review' : 'Write a review' %>
+          </div>
+
+          <form method="POST" action="/products/<%= product.slug %>/reviews">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+            <div class="mb-3">
+              <span class="form-label d-block">Your rating</span>
+              <span class="rating-input">
+                <% [5,4,3,2,1].forEach(function (n) { %>
+                  <input type="radio" name="rating" id="star<%= n %>" value="<%= n %>"
+                         <%= myReview && myReview.rating === n ? 'checked' : '' %> required>
+                  <label for="star<%= n %>" title="<%= n %> star<%= n === 1 ? '' : 's' %>">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.6 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 21l1.5-6.8L2.2 9.6l6.9-.7z"/></svg>
+                    <span class="visually-hidden"><%= n %> star<%= n === 1 ? '' : 's' %></span>
+                  </label>
+                <% }) %>
+              </span>
+            </div>
+
+            <div class="mb-3">
+              <label for="review-body" class="form-label">Your review (optional)</label>
+              <textarea id="review-body" name="body" class="form-control" rows="3" maxlength="2000"
+                        placeholder="How does it fit? How's the fabric?"><%= myReview ? (myReview.body || '') : '' %></textarea>
+            </div>
+
+            <button class="btn btn-accent"><%= myReview ? 'Update review' : 'Post review' %></button>
+          </form>
+
+          <% if (myReview) { %>
+            <form method="POST" action="/products/<%= product.slug %>/reviews/delete" class="mt-2">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-ghost-dark">Delete my review</button>
+            </form>
+          <% } %>
+        </div>
+
+      <% } else { %>
+
+        <div class="surface p-4 mb-3 text-center">
+          <p class="text-mute mb-0" style="font-size:.9rem">
+            Only customers who bought this piece can review it.
+          </p>
+        </div>
+
+      <% } %>
+
+      <!-- LIST -->
+      <% if (reviews.length === 0) { %>
+        <div class="empty-state">
+          <p class="text-mute mb-0">Be the first to review this piece.</p>
+        </div>
+      <% } else { %>
+        <div class="surface p-4">
+          <% reviews.forEach(function (r) { %>
+            <article class="review">
+              <div class="d-flex gap-3">
+                <div class="review__avatar"><%= r.author.trim().charAt(0).toUpperCase() %></div>
+                <div style="flex:1; min-width:0">
+                  <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <strong style="font-size:.9rem"><%= r.author %></strong>
+                    <span class="review__verified">
+                      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      Verified purchase
+                    </span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <%- include('../partials/stars', { value: r.rating, size: 13 }) %>
+                    <span class="text-mute" style="font-size:.76rem">
+                      <%= new Date(r.created_at).toLocaleDateString('en-SG', { day:'numeric', month:'short', year:'numeric' }) %>
+                    </span>
+                  </div>
+                  <% if (r.body) { %>
+                    <p class="text-soft mb-0" style="font-size:.9rem; white-space:pre-line"><%= r.body %></p>
+                  <% } %>
+                </div>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+
+    </div>
+  </div>
+</section>
 
 <%- include('../partials/footer') %>

@@ -588,3 +588,108 @@ a:hover { color: var(--orange-500); }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ============================================================
+   Ratings & reviews
+   ============================================================ */
+.stars { position: relative; display: inline-block; line-height: 0; white-space: nowrap; }
+.stars__row { display: inline-flex; gap: 1px; color: var(--line); }
+.stars__row--fill {
+  position: absolute; top: 0; left: 0;
+  overflow: hidden; color: var(--orange-500);
+}
+
+.rating-input {
+  display: inline-flex;
+  flex-direction: row-reverse;   /* so :hover can reach earlier siblings */
+  gap: 3px;
+}
+.rating-input input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.rating-input label {
+  cursor: pointer; color: var(--line); line-height: 0;
+  transition: color .15s var(--ease), transform .15s var(--snap);
+}
+.rating-input label:hover,
+.rating-input label:hover ~ label,
+.rating-input input:checked ~ label { color: var(--orange-500); }
+.rating-input label:hover { transform: scale(1.15); }
+.rating-input input:focus-visible + label { outline: 3px solid var(--indigo-300); border-radius: 4px; }
+
+.review {
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--line-soft);
+}
+.review:first-child { border-top: none; padding-top: 0; }
+.review__avatar {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: var(--indigo-100); color: var(--indigo-700);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .82rem;
+}
+.review__verified {
+  display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .7rem; font-weight: 600; color: var(--success);
+}
+
+.rating-bar {
+  height: 6px; border-radius: 3px; background: var(--line-soft); overflow: hidden;
+}
+.rating-bar__fill { height: 100%; background: var(--orange-500); border-radius: 3px; }
+
+.card-rating {
+  display: flex; align-items: center; gap: .3rem;
+  font-size: .72rem; color: var(--ink-mute); margin-top: .2rem;
+}
+
+/* ============================================================
+   Ratings & reviews
+   APPEND this block to public/css/style.css, just before the
+   "Error pages" section.
+   ============================================================ */
+
+.stars { position: relative; display: inline-block; line-height: 0; white-space: nowrap; }
+.stars__row { display: inline-flex; gap: 1px; color: var(--line); }
+.stars__row--fill {
+  position: absolute; top: 0; left: 0;
+  overflow: hidden; color: var(--orange-500);
+}
+
+/* row-reverse so :hover can reach earlier siblings — CSS can only style
+   LATER siblings, so reversing the visual order lets hovering star 4
+   light up stars 1 to 4 */
+.rating-input {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  gap: 3px;
+}
+.rating-input input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.rating-input label {
+  cursor: pointer; color: var(--line); line-height: 0;
+  transition: color .15s var(--ease), transform .15s var(--snap);
+}
+.rating-input label:hover,
+.rating-input label:hover ~ label,
+.rating-input input:checked ~ label { color: var(--orange-500); }
+.rating-input label:hover { transform: scale(1.15); }
+.rating-input input:focus-visible + label { outline: 3px solid var(--indigo-300); border-radius: 4px; }
+
+.review { padding: 1.1rem 0; border-top: 1px solid var(--line-soft); }
+.review:first-child { border-top: none; padding-top: 0; }
+.review__avatar {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: var(--indigo-100); color: var(--indigo-700);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .82rem;
+}
+.review__verified {
+  display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .7rem; font-weight: 600; color: var(--success);
+}
+
+.rating-bar { height: 6px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+.rating-bar__fill { height: 100%; background: var(--orange-500); border-radius: 3px; }
+
+.card-rating {
+  display: flex; align-items: center; gap: .3rem;
+  font-size: .72rem; color: var(--ink-mute); margin-top: .2rem;
+}
