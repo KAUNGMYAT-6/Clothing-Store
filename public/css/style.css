@@ -88,7 +88,9 @@ a:hover { color: var(--orange-500); }
 ::selection { background: var(--indigo-100); color: var(--indigo-900); }
 :focus-visible { outline: 3px solid var(--indigo-300); outline-offset: 2px; border-radius: 4px; }
 
-/* ---------------- Navigation ---------------- */
+/* ============================================================
+   Navigation (storefront)
+   ============================================================ */
 .site-nav { background: var(--indigo-900); position: sticky; top: 0; z-index: 1040; }
 
 .brand {
@@ -164,7 +166,9 @@ a:hover { color: var(--orange-500); }
 }
 .nav-ghost:hover { color: #fff; background: rgba(255,255,255,.1); }
 
-/* ---------------- Buttons ---------------- */
+/* ============================================================
+   Buttons
+   ============================================================ */
 .btn {
   font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .9rem;
   letter-spacing: -.01em; border-radius: var(--r-sm);
@@ -222,13 +226,18 @@ a:hover { color: var(--orange-500); }
 .stepper input {
   width: 38px; border: none; background: transparent; text-align: center;
   font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .86rem;
-  color: var(--ink); -moz-appearance: textfield;
+  color: var(--ink);
+  appearance: textfield;
+  -moz-appearance: textfield;
 }
 .stepper input::-webkit-outer-spin-button,
 .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
 .stepper.is-saving { opacity: .6; pointer-events: none; }
 
-/* ---------------- Cards ---------------- */
+/* ============================================================
+   Cards & surfaces
+   ============================================================ */
 .surface { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-sm); }
 .panel   { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-sm); }
 .panel-title { font-family: 'Outfit', sans-serif; font-size: .97rem; font-weight: 700; }
@@ -283,7 +292,9 @@ a:hover { color: var(--orange-500); }
 .badge-soft.is-danger  { background: #FEE2E2; color: #991B1B; }
 .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
 
-/* ---------------- Forms ---------------- */
+/* ============================================================
+   Forms
+   ============================================================ */
 .form-control, .form-select {
   border: 1.5px solid var(--line); border-radius: var(--r-sm);
   padding: .55rem .8rem; font-size: .9rem; background: var(--surface);
@@ -304,14 +315,14 @@ a:hover { color: var(--orange-500); }
   display: inline-flex; align-items: center; gap: .4rem;
   background: var(--indigo-50); color: var(--indigo-700);
   font-size: .8rem; font-weight: 500;
-  padding: .35rem .5rem .35rem .75rem; border-radius: 999px;
+  padding: .35rem .75rem; border-radius: 999px;
   transition: all .18s var(--ease);
 }
 .filter-chip:hover { background: var(--indigo-100); }
-.filter-chip a { color: var(--indigo-700); opacity: .6; font-size: .95rem; line-height: 1; }
-.filter-chip a:hover { opacity: 1; }
 
-/* ---------------- Flash ---------------- */
+/* ============================================================
+   Flash messages
+   ============================================================ */
 .flash-stack { display: flex; flex-direction: column; gap: .55rem; }
 .flash {
   display: flex; align-items: flex-start; gap: .65rem;
@@ -338,7 +349,9 @@ a:hover { color: var(--orange-500); }
 }
 .flash__close:hover { opacity: 1; }
 
-/* ---------------- Footer ---------------- */
+/* ============================================================
+   Footer
+   ============================================================ */
 .site-footer {
   background: var(--indigo-900); color: rgba(255,255,255,.6);
   padding: 2.9rem 0 1.75rem; margin-top: 3.5rem; flex-shrink: 0; font-size: .88rem;
@@ -351,7 +364,9 @@ a:hover { color: var(--orange-500); }
 }
 .footer-rule { height: 4px; border-radius: 2px; background: var(--grad-accent); margin-bottom: 2.1rem; }
 
-/* ---------------- Home ---------------- */
+/* ============================================================
+   Home page
+   ============================================================ */
 .hero {
   position: relative; overflow: hidden; border-radius: var(--r-xl);
   background: linear-gradient(140deg, #3730A3 0%, #4338CA 48%, #5B54E8 100%);
@@ -363,9 +378,7 @@ a:hover { color: var(--orange-500); }
 .hero .eyebrow { color: var(--orange-400); }
 .hero-spark { position: absolute; opacity: .5; }
 
-.hero-orb {
-  position: relative; display: flex; align-items: center; justify-content: center; min-height: 330px;
-}
+.hero-orb { position: relative; display: flex; align-items: center; justify-content: center; min-height: 330px; }
 .hero-orb__ring {
   position: absolute; width: 310px; height: 310px; border-radius: 50%;
   background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.22), rgba(255,255,255,.04) 62%);
@@ -415,7 +428,9 @@ a:hover { color: var(--orange-500); }
   gap: 1rem; margin-bottom: 1.15rem;
 }
 
-/* ---------------- Pagination ---------------- */
+/* ============================================================
+   Pagination
+   ============================================================ */
 .pagedot {
   width: 34px; height: 34px; border-radius: 9px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -427,7 +442,9 @@ a:hover { color: var(--orange-500); }
 .pagedot.is-on { background: var(--indigo-600); color: #fff; }
 .pagedot.is-on:hover { background: var(--indigo-700); color: #fff; }
 
-/* ---------------- Tables ---------------- */
+/* ============================================================
+   Tables
+   ============================================================ */
 .table-clean { width: 100%; border-collapse: collapse; }
 .table-clean thead th {
   padding: .7rem 1.15rem; background: #F8F9FE;
@@ -438,11 +455,24 @@ a:hover { color: var(--orange-500); }
 .table-clean tbody tr { transition: background .15s var(--ease); }
 .table-clean tbody tr:hover { background: #F8F9FE; }
 
-/* ---------------- Admin ---------------- */
-.admin-shell { display: grid; grid-template-columns: 236px 1fr; min-height: 100vh; }
+/* ============================================================
+   Admin
+   ============================================================ */
+
+
+.admin-shell { display: grid; grid-template-columns: 236px 1fr; min-height: 100vh; width: 100%; }
 .admin-side { background: var(--indigo-900); padding: 1.4rem 1rem; display: flex; flex-direction: column; gap: 1.6rem; }
-.admin-side__brand { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800; letter-spacing: -.04em; color: #fff; padding: 0 .4rem; position: relative; display: inline-block; padding-bottom: 4px; }
-.admin-side__tag { display: block; font-family: 'Inter', sans-serif; font-size: .66rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: .5rem; }
+.admin-main { background: var(--page); }
+
+.admin-side__brand {
+  font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800;
+  letter-spacing: -.04em; color: #fff !important; padding: 0 .4rem;
+  position: relative; display: inline-block; padding-bottom: 4px;
+}
+.admin-side__tag {
+  display: block; font-family: 'Inter', sans-serif; font-size: .66rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: .5rem;
+}
 
 .side-link {
   display: flex; align-items: center; gap: .7rem;
@@ -457,7 +487,10 @@ a:hover { color: var(--orange-500); }
   width: 3px; border-radius: 2px; background: var(--orange-500);
 }
 .side-link svg { flex-shrink: 0; opacity: .85; }
-.side-count { margin-left: auto; background: var(--orange-500); color: #fff; font-size: .66rem; font-weight: 700; padding: .1rem .45rem; border-radius: 999px; }
+.side-count {
+  margin-left: auto; background: var(--orange-500); color: #fff;
+  font-size: .66rem; font-weight: 700; padding: .1rem .45rem; border-radius: 999px;
+}
 
 .stat {
   background: var(--surface); border-radius: var(--r-lg); padding: 1.1rem 1.25rem;
@@ -474,6 +507,13 @@ a:hover { color: var(--orange-500); }
 .stat__label { font-size: .78rem; color: var(--ink-mute); font-weight: 500; }
 .stat__value { font-family: 'Outfit', sans-serif; font-size: 1.68rem; font-weight: 800; letter-spacing: -.03em; }
 .stat__icon { width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
+
+.restock-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .5rem; padding: .5rem; border-radius: 9px;
+  text-decoration: none; transition: background .15s var(--ease);
+}
+.restock-row:hover { background: #F8F9FE; }
 
 .admin-tab {
   font-family: 'Outfit', sans-serif; font-size: .84rem; font-weight: 600;
@@ -505,18 +545,22 @@ a:hover { color: var(--orange-500); }
 .img-tile__tools button:hover { background: #fff; transform: scale(1.08); }
 .img-tile__tools button.is-danger:hover { background: var(--danger); color: #fff; }
 
-.dropzone {
-  aspect-ratio: 3/4; border-radius: var(--r);
-  border: 1.5px dashed #C7CEEA; background: #F8F9FE;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .4rem; color: var(--ink-mute); cursor: pointer; transition: all .2s var(--ease);
+.bar {
+  background: var(--indigo-100); border-radius: 5px 5px 2px 2px;
+  transform-origin: bottom;
+  transition: background .2s var(--ease), transform .2s var(--ease);
 }
-.dropzone:hover { border-color: var(--orange-500); background: #FFF7ED; color: var(--orange-600); }
-
-.bar { background: var(--indigo-100); border-radius: 5px 5px 2px 2px; transform-origin: bottom; transition: background .2s var(--ease), transform .2s var(--ease); }
+.bar.is-best { background: var(--orange-500); }
 .barwrap:hover .bar { background: var(--orange-500); transform: scaleY(1.03); }
 
-/* ---------------- Error pages ---------------- */
+.stat__value.is-alert { color: var(--danger); }
+
+.stock-zero { color: var(--danger); font-weight: 700; }
+.stock-low  { color: var(--orange-600); font-weight: 700; }
+
+/* ============================================================
+   Error pages
+   ============================================================ */
 .error-page { text-align: center; padding: clamp(3rem, 9vw, 5.5rem) 1.5rem; max-width: 44ch; margin-inline: auto; }
 .error-page__code {
   font-family: 'Outfit', sans-serif; font-size: clamp(4.5rem, 15vw, 7rem);
@@ -524,7 +568,9 @@ a:hover { color: var(--orange-500); }
   color: var(--indigo-600); margin-bottom: .4rem;
 }
 
-/* ---------------- Utilities ---------------- */
+/* ============================================================
+   Utilities
+   ============================================================ */
 .empty-state { text-align: center; padding: 3.2rem 1.5rem; background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--sh-sm); }
 .accent-rule { height: 4px; width: 46px; border-radius: 2px; background: var(--orange-500); }
 

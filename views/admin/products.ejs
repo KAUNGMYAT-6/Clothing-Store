@@ -1,40 +1,82 @@
-<%- include('../partials/header') %>
+<%- include('partials/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Products</h1>
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
   <div>
-    <a href="/admin" class="btn btn-sm btn-outline-dark">Back to admin</a>
-    <a href="/admin/products/new" class="btn btn-sm btn-dark">New product</a>
+    <div class="eyebrow mb-1">Manage</div>
+    <h1>Products</h1>
   </div>
+  <a href="/admin/products/new" class="btn btn-accent">
+    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    New product
+  </a>
 </div>
 
-<table class="table align-middle">
-  <thead>
-    <tr><th>Name</th><th>Category</th><th>Dept</th><th>Price</th>
-        <th>Variants</th><th>Stock</th><th>Active</th><th></th></tr>
-  </thead>
-  <tbody>
-    <% products.forEach(p => { %>
-      <tr>
-        <td><%= p.name %></td>
-        <td class="small text-muted"><%= p.category %></td>
-        <td class="small text-muted"><%= p.department %></td>
-        <td>$<%= Number(p.price).toFixed(2) %></td>
-        <td><%= p.variant_count %></td>
-        <td <%= p.total_stock == 0 ? 'class="text-danger"' : '' %>><%= p.total_stock %></td>
-        <td>
-          <% if (p.is_active) { %>
-            <span class="badge bg-success">Yes</span>
-          <% } else { %>
-            <span class="badge bg-secondary">No</span>
-          <% } %>
-        </td>
-        <td class="text-end">
-          <a href="/admin/products/<%= p.id %>/edit" class="btn btn-sm btn-outline-dark">Edit</a>
-        </td>
-      </tr>
-    <% }) %>
-  </tbody>
-</table>
+<div class="panel overflow-hidden">
+  <% if (products.length === 0) { %>
 
-<%- include('../partials/footer') %>
+    <div class="p-5 text-center">
+      <h3 class="h6 mb-2">No products yet</h3>
+      <p class="text-mute mb-3">Add your first product to get the shop going.</p>
+      <a href="/admin/products/new" class="btn btn-accent">New product</a>
+    </div>
+
+  <% } else { %>
+
+    <div class="table-responsive">
+      <table class="table-clean">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Dept</th>
+            <th class="text-end">Price</th>
+            <th class="text-center">Variants</th>
+            <th class="text-center">Stock</th>
+            <th>Status</th>
+            <th style="width:72px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% products.forEach(function (p) {
+               const stock = Number(p.total_stock);
+               const variants = Number(p.variant_count);
+               let stockCls = '';
+               if (stock === 0) stockCls = 'stock-zero';
+               else if (stock <= 5) stockCls = 'stock-low';
+          %>
+            <tr>
+              <td>
+                <div class="font-display fw-semibold"><%= p.name %></div>
+                <div class="text-mute" style="font-size:.76rem"><%= p.slug %></div>
+              </td>
+              <td class="text-mute" style="font-size:.84rem"><%= p.category %></td>
+              <td class="text-mute" style="font-size:.84rem"><%= p.department %></td>
+              <td class="text-end font-display fw-bold">$<%= Number(p.price).toFixed(2) %></td>
+              <td class="text-center">
+                <% if (variants === 0) { %>
+                  <span class="badge-soft is-danger">none</span>
+                <% } else { %>
+                  <%= variants %>
+                <% } %>
+              </td>
+              <td class="text-center <%= stockCls %>"><%= stock %></td>
+              <td>
+                <% if (p.is_active) { %>
+                  <span class="badge-soft is-success">Live</span>
+                <% } else { %>
+                  <span class="badge-soft is-out">Hidden</span>
+                <% } %>
+              </td>
+              <td class="text-end">
+                <a href="/admin/products/<%= p.id %>/edit" class="btn btn-sm btn-soft">Edit</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

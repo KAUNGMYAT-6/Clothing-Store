@@ -1,40 +1,81 @@
-<%- include('../partials/header') %>
+<%- include('partials/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Orders</h1>
-  <a href="/admin" class="btn btn-sm btn-outline-dark">Back to admin</a>
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <div class="eyebrow mb-1">Manage</div>
+    <h1>Orders</h1>
+  </div>
+  <div class="text-mute pb-1" style="font-size:.85rem">
+    <strong class="text-dark"><%= orders.length %></strong> order<%= orders.length === 1 ? '' : 's' %>
+  </div>
 </div>
 
-<form class="mb-4" method="GET" action="/admin/orders">
-  <div class="row g-2">
+<!-- FILTER -->
+<div class="panel p-3 mb-3">
+  <form method="GET" action="/admin/orders" class="row g-2 align-items-center">
     <div class="col-md-3">
-      <select name="status" class="form-select">
+      <label for="status" class="visually-hidden">Status</label>
+      <select id="status" name="status" class="form-select">
         <option value="">All statuses</option>
-        <% ['pending','paid','shipped','delivered','cancelled'].forEach(s => { %>
+        <% ['pending','paid','shipped','delivered','cancelled'].forEach(function (s) { %>
           <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
         <% }) %>
       </select>
     </div>
-    <div class="col-md-2"><button class="btn btn-dark w-100">Filter</button></div>
-  </div>
-</form>
+    <div class="col-md-2">
+      <button class="btn btn-accent w-100">Filter</button>
+    </div>
+    <% if (filters.status) { %>
+      <div class="col-md-2">
+        <a href="/admin/orders" class="btn btn-plain w-100">Clear</a>
+      </div>
+    <% } %>
+  </form>
+</div>
 
-<table class="table align-middle">
-  <thead>
-    <tr><th>#</th><th>Date</th><th>Email</th><th>Items</th><th>Status</th><th class="text-end">Total</th></tr>
-  </thead>
-  <tbody>
-    <% orders.forEach(o => { %>
-      <tr>
-        <td><a href="/admin/orders/<%= o.id %>">#<%= o.id %></a></td>
-        <td class="small text-muted"><%= new Date(o.created_at).toLocaleDateString() %></td>
-        <td><%= o.email %></td>
-        <td><%= o.item_count %></td>
-        <td><span class="badge bg-secondary"><%= o.status %></span></td>
-        <td class="text-end">$<%= Number(o.total).toFixed(2) %></td>
-      </tr>
-    <% }) %>
-  </tbody>
-</table>
+<!-- TABLE -->
+<div class="panel overflow-hidden">
+  <% if (orders.length === 0) { %>
+    <p class="text-mute p-4 mb-0" style="font-size:.88rem">No orders match that filter.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table-clean">
+        <thead>
+          <tr>
+            <th>Order</th><th>Customer</th><th>Items</th><th>Placed</th>
+            <th>Status</th><th class="text-end">Total</th><th style="width:52px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% orders.forEach(function (o) {
+               let cls = 'is-info';
+               if (o.status === 'pending')   cls = 'is-low';
+               if (o.status === 'delivered') cls = 'is-success';
+               if (o.status === 'cancelled') cls = 'is-out';
+          %>
+            <tr>
+              <td class="font-display fw-bold">#<%= o.id %></td>
+              <td>
+                <div class="text-truncate" style="max-width:240px"><%= o.email %></div>
+                <div class="text-mute text-truncate" style="font-size:.78rem; max-width:240px"><%= o.shipping_name %></div>
+              </td>
+              <td><%= o.item_count %></td>
+              <td class="text-mute" style="font-size:.84rem">
+                <%= new Date(o.created_at).toLocaleDateString('en-SG', { day:'numeric', month:'short', year:'numeric' }) %>
+              </td>
+              <td><span class="badge-soft <%= cls %>"><%= o.status %></span></td>
+              <td class="text-end font-display fw-bold">$<%= Number(o.total).toFixed(2) %></td>
+              <td class="text-end">
+                <a href="/admin/orders/<%= o.id %>" class="btn-icon" aria-label="Open order <%= o.id %>">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
 
-<%- include('../partials/footer') %>
+<%- include('partials/footer') %>

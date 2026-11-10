@@ -1,49 +1,192 @@
-<%- include('../partials/header') %>
+<%- include('partials/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Admin</h1>
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
   <div>
-    <a href="/admin/orders" class="btn btn-sm btn-outline-dark">Orders</a>
-    <a href="/admin/products" class="btn btn-sm btn-outline-dark">Products</a>
+    <div class="eyebrow mb-1"><%= today %></div>
+    <h1>Dashboard</h1>
   </div>
+  <a href="/admin/products/new" class="btn btn-accent">
+    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    New product
+  </a>
 </div>
 
-<div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
-  <div class="col"><div class="card"><div class="card-body">
-    <div class="text-muted small">Paid orders</div>
-    <div class="fs-4 fw-bold"><%= stats.paid_orders %></div>
-  </div></div></div>
-  <div class="col"><div class="card"><div class="card-body">
-    <div class="text-muted small">Pending</div>
-    <div class="fs-4 fw-bold"><%= stats.pending_orders %></div>
-  </div></div></div>
-  <div class="col"><div class="card"><div class="card-body">
-    <div class="text-muted small">Revenue</div>
-    <div class="fs-4 fw-bold">$<%= Number(stats.revenue).toFixed(2) %></div>
-  </div></div></div>
-  <div class="col"><div class="card"><div class="card-body">
-    <div class="text-muted small">Products</div>
-    <div class="fs-4 fw-bold"><%= stats.active_products %></div>
-  </div></div></div>
-  <div class="col"><div class="card"><div class="card-body">
-    <div class="text-muted small">Out of stock</div>
-    <div class="fs-4 fw-bold text-danger"><%= stats.out_of_stock %></div>
-  </div></div></div>
+<!-- STATS -->
+<div class="row row-cols-2 row-cols-lg-4 g-3 mb-3">
+
+  <div class="col">
+    <div class="stat">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="stat__label">Revenue</span>
+        <span class="stat__icon" style="background:var(--orange-100)">
+          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5A4 4 0 0 0 13 4h-2a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-2a4 4 0 0 1-4-2.5"/></svg>
+        </span>
+      </div>
+      <div class="stat__value">$<%= Number(stats.revenue).toFixed(2) %></div>
+      <div class="text-mute" style="font-size:.78rem">all paid orders</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="stat">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="stat__label">Paid orders</span>
+        <span class="stat__icon" style="background:var(--indigo-50)">
+          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4338CA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </span>
+      </div>
+      <div class="stat__value"><%= stats.paid_orders %></div>
+      <div class="text-mute" style="font-size:.78rem">lifetime</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="stat">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="stat__label">Awaiting payment</span>
+        <span class="stat__icon" style="background:var(--orange-100)">
+          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+      </div>
+      <div class="stat__value"><%= stats.pending_orders %></div>
+      <div class="text-mute" style="font-size:.78rem">not completed</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <% const oos = Number(stats.out_of_stock); %>
+    <div class="stat">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="stat__label">Out of stock</span>
+        <span class="stat__icon" style="background:#FEE2E2">
+          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        </span>
+      </div>
+      <div class="stat__value <%= oos > 0 ? 'is-alert' : '' %>"><%= oos %></div>
+      <div class="text-mute" style="font-size:.78rem">variants at zero</div>
+    </div>
+  </div>
+
 </div>
 
-<h5>Recent orders</h5>
-<table class="table">
-  <thead><tr><th>#</th><th>Email</th><th>Status</th><th class="text-end">Total</th></tr></thead>
-  <tbody>
-    <% recent.forEach(o => { %>
-      <tr>
-        <td><a href="/admin/orders/<%= o.id %>"><%= o.id %></a></td>
-        <td><%= o.email %></td>
-        <td><span class="badge bg-secondary"><%= o.status %></span></td>
-        <td class="text-end">$<%= Number(o.total).toFixed(2) %></td>
-      </tr>
-    <% }) %>
-  </tbody>
-</table>
+<!-- CHART + RESTOCK -->
+<div class="row g-3 mb-3">
 
-<%- include('../partials/footer') %>
+  <div class="col-lg-8">
+    <div class="panel p-4 h-100">
+      <div class="mb-4">
+        <div class="panel-title mb-1">Revenue, last 7 days</div>
+        <div class="text-mute" style="font-size:.8rem">Paid orders only</div>
+      </div>
+
+      <%
+        const revenues = chart.map(function (d) { return Number(d.revenue); });
+        const maxRev = Math.max.apply(null, revenues.concat([1]));
+        const bars = chart.map(function (d) {
+          const rev = Number(d.revenue);
+          const pct = Math.max((rev / maxRev) * 100, 3);
+          const isBest = rev === maxRev && rev > 0;
+          return {
+            label: d.label,
+            amount: Math.round(rev),
+            pct: pct,
+            barClass: isBest ? 'bar is-best w-100' : 'bar w-100',
+            labelClass: isBest ? 'fw-semibold' : 'text-mute'
+          };
+        });
+      %>
+
+      <div class="d-flex align-items-end gap-3" style="height:170px">
+        <% bars.forEach(function (b) { %>
+          <div class="barwrap d-flex flex-column align-items-center justify-content-end gap-2"
+               style="flex:1; height:100%">
+            <span class="font-display fw-bold text-soft" style="font-size:.74rem">$<%= b.amount %></span>
+            <div class="<%= b.barClass %>" style="height:<%= b.pct %>%"></div>
+            <span class="<%= b.labelClass %>" style="font-size:.72rem"><%= b.label %></span>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="panel p-3 h-100">
+      <div class="d-flex align-items-center justify-content-between px-2 mb-3">
+        <div class="panel-title">Needs restocking</div>
+        <% if (lowStock.length) { %>
+          <span class="badge-soft is-danger"><%= lowStock.length %></span>
+        <% } %>
+      </div>
+
+      <% if (lowStock.length === 0) { %>
+        <p class="text-mute px-2 mb-0" style="font-size:.85rem">Everything is in stock.</p>
+      <% } else { %>
+        <div class="d-flex flex-column">
+          <% lowStock.forEach(function (v) {
+               const cls = Number(v.stock_quantity) === 0 ? 'is-danger' : 'is-low';
+          %>
+            <a href="/admin/products/<%= v.product_id %>/edit" class="restock-row">
+              <div style="min-width:0">
+                <div class="font-display fw-semibold text-dark text-truncate" style="font-size:.86rem"><%= v.name %></div>
+                <div class="text-mute" style="font-size:.76rem"><%= v.color %> · <%= v.size %></div>
+              </div>
+              <span class="badge-soft <%= cls %>"><%= v.stock_quantity %> left</span>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+</div>
+
+<!-- RECENT ORDERS -->
+<div class="panel overflow-hidden">
+  <div class="d-flex align-items-center justify-content-between p-4 pb-3">
+    <div>
+      <div class="panel-title mb-1">Recent orders</div>
+      <div class="text-mute" style="font-size:.8rem">Newest first</div>
+    </div>
+    <a href="/admin/orders" class="btn btn-sm btn-plain">View all</a>
+  </div>
+
+  <% if (recent.length === 0) { %>
+    <p class="text-mute px-4 pb-4 mb-0" style="font-size:.88rem">No orders yet.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table-clean">
+        <thead>
+          <tr>
+            <th>Order</th><th>Customer</th><th>Placed</th><th>Status</th>
+            <th class="text-end">Total</th><th style="width:52px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recent.forEach(function (o) {
+               let cls = 'is-info';
+               if (o.status === 'pending')   cls = 'is-low';
+               if (o.status === 'delivered') cls = 'is-success';
+               if (o.status === 'cancelled') cls = 'is-out';
+          %>
+            <tr>
+              <td class="font-display fw-bold">#<%= o.id %></td>
+              <td class="text-truncate" style="max-width:220px"><%= o.email %></td>
+              <td class="text-mute" style="font-size:.84rem">
+                <%= new Date(o.created_at).toLocaleDateString('en-SG', { day:'numeric', month:'short' }) %>
+              </td>
+              <td><span class="badge-soft <%= cls %>"><%= o.status %></span></td>
+              <td class="text-end font-display fw-bold">$<%= Number(o.total).toFixed(2) %></td>
+              <td class="text-end">
+                <a href="/admin/orders/<%= o.id %>" class="btn-icon" aria-label="Open order <%= o.id %>">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>
