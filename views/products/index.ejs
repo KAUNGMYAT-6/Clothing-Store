@@ -2,75 +2,101 @@
 
 <div class="section-head">
   <div>
-    <div class="eyebrow mb-1">Collection</div>
-    <h1 class="mb-0">All products</h1>
+    <div style="font-size:.82rem; color:var(--ink-mute)" class="mb-2">
+      <a href="/" class="text-mute">Home</a> <span style="opacity:.5">/</span> <span class="text-soft">Shop</span>
+    </div>
+    <h1>Shop all</h1>
+  </div>
+  <div class="text-mute pb-1" style="font-size:.85rem">
+    <strong class="text-dark"><%= products.length %></strong> product<%= products.length === 1 ? '' : 's' %>
   </div>
 </div>
 
-<form class="row g-2 mb-4" method="GET" action="/shop">
-  <div class="col-md-4">
-    <input type="text" name="q" class="form-control" placeholder="Search products"
-           value="<%= filters.q || '' %>">
-  </div>
+<!-- FILTER BAR -->
+<div class="surface p-3 mb-3">
+  <form method="GET" action="/shop" class="row g-2 align-items-center">
+    <div class="col-md-5">
+      <label for="q" class="visually-hidden">Search products</label>
+      <input id="q" type="search" name="q" class="form-control" placeholder="Search products"
+             value="<%= filters.q || '' %>">
+    </div>
+    <div class="col-md-3">
+      <label for="category" class="visually-hidden">Category</label>
+      <select id="category" name="category" class="form-select">
+        <option value="">All categories</option>
+        <% categories.forEach(c => { %>
+          <option value="<%= c.id %>" <%= filters.category == c.id ? 'selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label for="department" class="visually-hidden">Department</label>
+      <select id="department" name="department" class="form-select">
+        <option value="">All departments</option>
+        <% ['women','men','unisex'].forEach(d => { %>
+          <option value="<%= d %>" <%= filters.department === d ? 'selected' : '' %>><%= d.charAt(0).toUpperCase() + d.slice(1) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2 d-grid">
+      <button class="btn btn-accent">Filter</button>
+    </div>
+  </form>
+</div>
 
-  <div class="col-md-3">
-    <select name="category" class="form-select">
-      <option value="">All categories</option>
-      <% categories.forEach(c => { %>
-        <option value="<%= c.id %>" <%= filters.category == c.id ? 'selected' : '' %>>
-          <%= c.name %>
-        </option>
-      <% }) %>
-    </select>
+<!-- ACTIVE FILTERS -->
+<% const active = [];
+   if (filters.q) active.push({ label: '"' + filters.q + '"', key: 'q' });
+   if (filters.category) { const c = categories.find(x => x.id == filters.category); if (c) active.push({ label: c.name, key: 'category' }); }
+   if (filters.department) active.push({ label: filters.department, key: 'department' });
+%>
+<% if (active.length) { %>
+  <div class="d-flex align-items-center gap-2 flex-wrap mb-4">
+    <span class="text-mute" style="font-size:.78rem; font-weight:500">Active:</span>
+    <% active.forEach(a => { %>
+      <span class="filter-chip"><%= a.label %></span>
+    <% }) %>
+    <a href="/shop" class="ms-1" style="font-size:.78rem; font-weight:600">Clear all</a>
   </div>
+<% } %>
 
-  <div class="col-md-3">
-    <select name="department" class="form-select">
-      <option value="">All departments</option>
-      <% ['men','women','unisex'].forEach(d => { %>
-        <option value="<%= d %>" <%= filters.department === d ? 'selected' : '' %>><%= d %></option>
-      <% }) %>
-    </select>
-  </div>
-
-  <div class="col-md-2 d-grid">
-    <button class="btn btn-brand"><span>Filter</span></button>
-  </div>
-</form>
-
+<!-- GRID -->
 <% if (products.length === 0) { %>
-
   <div class="empty-state">
     <h3 class="h5 mb-2">No matches</h3>
     <p class="text-mute mb-3">Nothing fits those filters. Try widening your search.</p>
-    <a href="/shop" class="btn btn-outline-brand">Clear filters</a>
+    <a href="/shop" class="btn btn-soft">Clear filters</a>
   </div>
-
 <% } else { %>
-
-  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-md-4">
-    <% products.forEach(product => { %>
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
+    <% products.forEach((product, i) => {
+         const stock = Number(product.total_stock);
+    %>
       <div class="col">
         <a href="/products/<%= product.slug %>" class="text-decoration-none">
-          <article class="product-card">
+          <article class="product-card reveal <%= 'reveal-' + (i % 4 === 0 ? '' : Math.min(i % 4, 3)) %> <%= stock === 0 ? 'is-out' : '' %>">
             <div class="product-card__media">
-              <img src="<%= product.image_url || 'https://placehold.co/600x800/FAF8FC/8B8398?text=Denise' %>"
+              <% if (stock === 0) { %>
+                <span class="flag flag--out">Sold out</span>
+              <% } else if (stock <= 3) { %>
+                <span class="flag flag--low"><%= stock %> left</span>
+              <% } %>
+              <img src="<%= product.image_url || 'https://placehold.co/600x800/EEF2FF/8785A8?text=DENISE' %>"
                    alt="<%= product.alt_text || product.name %>" loading="lazy">
-              <% if (Number(product.total_stock) === 0) { %>
-                <div class="media-overlay">Sold out</div>
+              <% if (stock > 0) { %>
+                <span class="product-card__quick">View details</span>
               <% } %>
             </div>
             <div class="product-card__body">
               <h3 class="product-card__name"><%= product.name %></h3>
               <div class="product-card__meta"><%= product.category %> · <%= product.department %></div>
-              <div class="product-card__price">$<%= Number(product.price).toFixed(2) %></div>
+              <div class="product-card__price <%= stock === 0 ? 'text-mute' : '' %>">$<%= Number(product.price).toFixed(2) %></div>
             </div>
           </article>
         </a>
       </div>
     <% }) %>
   </div>
-
 <% } %>
 
 <%- include('../partials/footer') %>

@@ -1,74 +1,105 @@
 <%- include('partials/header') %>
 
-<!-- Hero -->
-<section class="hero mb-5">
-  <div class="eyebrow mb-3">New season · 2026</div>
-  <h1 class="mb-3">Pieces worth keeping.</h1>
-  <p class="mb-4">
-    Considered everyday clothing in natural fabrics. Made in small runs,
-    designed to outlast the season.
-  </p>
-  <div class="d-flex flex-wrap gap-2">
-    <a href="/shop" class="btn btn-light-brand btn-lg">Shop the collection</a>
-    <a href="/shop?department=women" class="btn btn-lg btn-outline-light">Women</a>
-    <a href="/shop?department=men" class="btn btn-lg btn-outline-light">Men</a>
-  </div>
-</section>
+<!-- HERO -->
+<section class="hero mb-4">
+  <svg class="hero-spark" aria-hidden="true" style="top:46px; left:52%; width:26px" viewBox="0 0 24 24"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z" fill="#A5B4FC"/></svg>
+  <svg class="hero-spark" aria-hidden="true" style="bottom:64px; left:46%; width:16px" viewBox="0 0 24 24"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z" fill="#A5B4FC"/></svg>
+  <svg class="hero-spark" aria-hidden="true" style="top:120px; right:60px; width:20px" viewBox="0 0 24 24"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z" fill="#FF8A4C"/></svg>
 
-<!-- Value props -->
-<section class="row g-4 mb-5 pb-3">
-  <div class="col-md-4">
-    <div class="value-prop">
-      <div class="value-prop__icon">✦</div>
-      <div>
-        <div class="value-prop__title">Natural fabrics</div>
-        <p class="value-prop__text">Linen, cotton and wool chosen for how they wear over time.</p>
+  <div class="row align-items-center g-4 position-relative">
+    <div class="col-lg-6">
+      <div class="eyebrow mb-3">New in this week</div>
+      <h1 class="mb-3">New week,<br>new fits.</h1>
+      <p class="mb-4">Fresh drops every Friday. Flat $5 delivery across Singapore and 30 days to send anything back.</p>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/shop" class="btn btn-accent btn-lg">Shop new in</a>
+        <a href="/shop?department=women" class="btn btn-outline-l btn-lg">Women</a>
       </div>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="value-prop">
-      <div class="value-prop__icon">◷</div>
-      <div>
-        <div class="value-prop__title">Ships in 2–3 days</div>
-        <p class="value-prop__text">Flat $5 shipping across Singapore, tracked end to end.</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="value-prop">
-      <div class="value-prop__icon">↺</div>
-      <div>
-        <div class="value-prop__title">Easy returns</div>
-        <p class="value-prop__text">Thirty days to change your mind, no questions asked.</p>
+
+    <div class="col-lg-6 d-none d-lg-block">
+      <div class="hero-orb">
+        <div class="hero-orb__ring"></div>
+        <svg aria-hidden="true" width="190" height="190" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" style="position:relative; opacity:.95">
+          <path d="M20 10 L32 16 L44 10 L54 19 L47 29 L44 25.5 V56 H20 V25.5 L17 29 L10 19 Z"/>
+          <path d="M32 16 V56"/>
+          <path d="M24.5 12 a7.5 7.5 0 0 0 15 0"/>
+        </svg>
+        <% if (featured.length) { %>
+          <div class="hero-chip">
+            <div style="font-size:.68rem; color:var(--ink-mute); font-weight:600; letter-spacing:.06em; text-transform:uppercase">Just dropped</div>
+            <div class="font-display fw-bold" style="font-size:.95rem; margin-top:2px"><%= featured[0].name %></div>
+            <div class="font-display fw-bold text-accent" style="font-size:.95rem">$<%= Number(featured[0].price).toFixed(2) %></div>
+          </div>
+        <% } %>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Featured -->
+<!-- VALUE STRIP -->
+<section class="row g-3 mb-5">
+  <div class="col-md-4">
+    <div class="value-card reveal">
+      <div class="value-card__icon" style="background:var(--indigo-50)">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4338CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13v10H3z"/><path d="M16 10h3.5L22 13v4h-6"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      </div>
+      <div>
+        <div class="font-display fw-semibold" style="font-size:.92rem">Flat $5 delivery</div>
+        <div class="text-mute" style="font-size:.82rem">2–3 days, tracked, Singapore-wide</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="value-card reveal reveal-1">
+      <div class="value-card__icon" style="background:var(--orange-100)">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+      </div>
+      <div>
+        <div class="font-display fw-semibold" style="font-size:.92rem">30-day returns</div>
+        <div class="text-mute" style="font-size:.82rem">Changed your mind? Send it back</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="value-card reveal reveal-2">
+      <div class="value-card__icon" style="background:var(--indigo-50)">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4338CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </div>
+      <div>
+        <div class="font-display fw-semibold" style="font-size:.92rem">Secure checkout</div>
+        <div class="text-mute" style="font-size:.82rem">Card payments handled by Stripe</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEW IN -->
 <section class="mb-5">
   <div class="section-head">
     <div>
-      <div class="eyebrow mb-1">Just arrived</div>
-      <h2 class="mb-0">New this season</h2>
+      <div class="eyebrow mb-1">Just dropped</div>
+      <h2>New in</h2>
     </div>
-    <a href="/shop" class="btn btn-sm btn-outline-brand">View all</a>
+    <a href="/shop" class="btn btn-sm btn-soft">View all</a>
   </div>
 
   <% if (featured.length === 0) { %>
     <div class="empty-state">
-      <p class="text-mute mb-0">Nothing in stock just yet. Check back soon.</p>
+      <h3 class="h6 mb-2">Nothing in stock yet</h3>
+      <p class="text-mute mb-0">New pieces land every Friday.</p>
     </div>
   <% } else { %>
-    <div class="row row-cols-2 row-cols-md-4 g-3 g-md-4">
-      <% featured.forEach(product => { %>
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+      <% featured.forEach((product, i) => { %>
         <div class="col">
           <a href="/products/<%= product.slug %>" class="text-decoration-none">
-            <article class="product-card">
+            <article class="product-card reveal <%= i > 0 ? 'reveal-' + Math.min(i, 3) : '' %>">
               <div class="product-card__media">
-                <img src="<%= product.image_url || 'https://placehold.co/600x800/FAF8FC/8B8398?text=Denise' %>"
+                <span class="flag flag--new">New</span>
+                <img src="<%= product.image_url || 'https://placehold.co/600x800/EEF2FF/8785A8?text=DENISE' %>"
                      alt="<%= product.alt_text || product.name %>" loading="lazy">
+                <span class="product-card__quick">View details</span>
               </div>
               <div class="product-card__body">
                 <h3 class="product-card__name"><%= product.name %></h3>
@@ -83,35 +114,40 @@
   <% } %>
 </section>
 
-<!-- Categories -->
+<!-- CATEGORIES -->
 <section class="mb-5">
   <div class="section-head">
     <div>
       <div class="eyebrow mb-1">Browse</div>
-      <h2 class="mb-0">Shop by category</h2>
+      <h2>Shop by category</h2>
     </div>
   </div>
-
   <div class="row row-cols-2 row-cols-md-4 g-3">
-    <% categories.forEach(c => { %>
+    <% categories.forEach((c, i) => { %>
       <div class="col">
-        <a href="/shop?category=<%= c.id %>" class="category-tile">
+        <a href="/shop?category=<%= c.id %>" class="category-tile reveal <%= i > 0 ? 'reveal-' + Math.min(i, 3) : '' %>">
           <div class="category-tile__name"><%= c.name %></div>
-          <div class="category-tile__count"><%= c.product_count %> item<%= c.product_count === 1 ? '' : 's' %></div>
+          <div class="category-tile__count"><%= c.product_count %> item<%= c.product_count == 1 ? '' : 's' %></div>
         </a>
       </div>
     <% }) %>
   </div>
 </section>
 
-<!-- Closing band -->
-<section class="surface text-center p-5" style="border-radius: var(--radius-lg);">
-  <div class="gradient-rule mx-auto mb-4" style="width: 60px;"></div>
-  <h2 class="mb-2">Not sure where to start?</h2>
-  <p class="text-mute mb-4" style="max-width: 44ch; margin-inline: auto;">
-    Browse the full collection, filter by size and department, and find something that fits.
+<!-- CTA -->
+<section class="cta-band reveal">
+  <svg class="hero-spark" aria-hidden="true" style="top:28px; left:8%; width:18px" viewBox="0 0 24 24"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z" fill="#FF8A4C"/></svg>
+  <svg class="hero-spark" aria-hidden="true" style="bottom:30px; right:10%; width:22px" viewBox="0 0 24 24"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z" fill="#A5B4FC"/></svg>
+  <div class="accent-rule mx-auto mb-3"></div>
+  <h2 class="mb-2">Drops land every Friday</h2>
+  <p class="mb-4" style="color:rgba(255,255,255,.7); max-width:44ch; margin-inline:auto">
+    Make an account and your cart, sizes and order history follow you between devices.
   </p>
-  <a href="/shop" class="btn btn-brand btn-lg"><span>Browse everything</span></a>
+  <% if (user) { %>
+    <a href="/shop" class="btn btn-white btn-lg">Browse everything</a>
+  <% } else { %>
+    <a href="/register" class="btn btn-white btn-lg">Create an account</a>
+  <% } %>
 </section>
 
 <%- include('partials/footer') %>

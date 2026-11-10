@@ -1,87 +1,97 @@
 <%- include('../partials/header') %>
 
-<a href="/shop" class="btn btn-sm btn-outline-brand mb-4">&larr; Back to shop</a>
+<div style="font-size:.82rem; color:var(--ink-mute)" class="mb-3">
+  <a href="/" class="text-mute">Home</a> <span style="opacity:.5">/</span>
+  <a href="/shop" class="text-mute">Shop</a> <span style="opacity:.5">/</span>
+  <span class="text-soft"><%= product.name %></span>
+</div>
 
-<div class="row g-5">
-  <div class="col-md-6">
+<div class="row g-4 g-lg-5">
+  <!-- IMAGES -->
+  <div class="col-lg-6">
     <% if (images.length) { %>
-      <div class="surface overflow-hidden mb-3">
+      <div class="surface overflow-hidden mb-2">
         <img src="<%= images[0].image_url %>" class="img-fluid w-100"
              alt="<%= images[0].alt_text || product.name %>">
       </div>
-      <div class="row g-2">
-        <% images.slice(1).forEach(img => { %>
-          <div class="col-4">
-            <div class="surface overflow-hidden">
-              <img src="<%= img.image_url %>" class="img-fluid w-100"
-                   alt="<%= img.alt_text || product.name %>" loading="lazy">
+      <% if (images.length > 1) { %>
+        <div class="row g-2">
+          <% images.slice(1).forEach(img => { %>
+            <div class="col-4">
+              <div class="surface overflow-hidden">
+                <img src="<%= img.image_url %>" class="img-fluid w-100"
+                     alt="<%= img.alt_text || product.name %>" loading="lazy">
+              </div>
             </div>
-          </div>
-        <% }) %>
-      </div>
+          <% }) %>
+        </div>
+      <% } %>
     <% } else { %>
       <div class="surface overflow-hidden">
-        <img src="https://placehold.co/600x800/FAF8FC/8B8398?text=Denise" class="img-fluid w-100"
+        <img src="https://placehold.co/600x800/EEF2FF/8785A8?text=DENISE" class="img-fluid w-100"
              alt="<%= product.name %>">
       </div>
     <% } %>
   </div>
 
-  <div class="col-md-6">
+  <!-- DETAILS -->
+  <div class="col-lg-6">
     <div class="eyebrow mb-2"><%= product.category %> · <%= product.department %></div>
     <h1 class="mb-2"><%= product.name %></h1>
-    <p class="fs-4 fw-semibold mb-4">$<%= Number(product.price).toFixed(2) %></p>
-    <p class="text-soft"><%= product.description %></p>
+    <div class="font-display fw-bold mb-3" style="font-size:1.5rem">$<%= Number(product.price).toFixed(2) %></div>
+    <p class="text-soft mb-4"><%= product.description %></p>
 
-    <% if (typeof query !== 'undefined' && query.error === 'stock') { %>
-      <div class="flash flash--warning mb-3">
-        <span>Not enough stock for that selection. Please choose a smaller quantity.</span>
-      </div>
-    <% } %>
+    <% const totalStock = variants.reduce((s, v) => s + Number(v.stock_quantity), 0); %>
 
     <% if (variants.length === 0) { %>
 
-      <div class="flash flash--info mt-4"><span>This piece is currently unavailable.</span></div>
+      <div class="flash flash--info"><span class="flash__text">This piece is currently unavailable.</span></div>
 
-    <% } else if (variants.every(v => Number(v.stock_quantity) === 0)) { %>
+    <% } else if (totalStock === 0) { %>
 
-      <div class="flash flash--info mt-4"><span>Sold out. Check back soon.</span></div>
+      <div class="flash flash--info"><span class="flash__text">Sold out. New stock lands on Fridays.</span></div>
 
     <% } else { %>
 
-      <form method="POST" action="/cart/add" class="mt-4">
+      <form method="POST" action="/cart/add">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="slug" value="<%= product.slug %>">
 
         <div class="mb-3">
-          <label class="form-label">Size and colour</label>
-          <select name="variant_id" class="form-select" required>
+          <label for="variant" class="form-label">Size and colour</label>
+          <select id="variant" name="variant_id" class="form-select" required>
             <option value="">Choose an option</option>
-            <% variants.forEach(v => { %>
-              <option value="<%= v.id %>"
-                      <%= Number(v.stock_quantity) === 0 ? 'disabled' : '' %>>
-                <%= v.color %> · Size <%= v.size %>
-                <% if (Number(v.stock_quantity) === 0) { %>
-                  — sold out
-                <% } else if (Number(v.stock_quantity) <= 3) { %>
-                  — only <%= v.stock_quantity %> left
-                <% } %>
+            <% variants.forEach(v => {
+                 const s = Number(v.stock_quantity);
+            %>
+              <option value="<%= v.id %>" <%= s === 0 ? 'disabled' : '' %>>
+                <%= v.color %> · Size <%= v.size %><%
+                  if (s === 0) { %> — sold out<% }
+                  else if (s <= 3) { %> — only <%= s %> left<% }
+                %>
               </option>
             <% }) %>
           </select>
         </div>
 
-        <div class="mb-4" style="max-width: 130px;">
-          <label class="form-label">Quantity</label>
-          <input type="number" name="quantity" class="form-control" value="1" min="1" required>
+        <div class="mb-4">
+          <label for="qty" class="form-label">Quantity</label>
+          <div>
+            <span class="stepper" data-stepper>
+              <button type="button" data-step="down" aria-label="Decrease quantity">&minus;</button>
+              <input id="qty" type="number" name="quantity" value="1" min="1" max="10">
+              <button type="button" data-step="up" aria-label="Increase quantity">+</button>
+            </span>
+          </div>
         </div>
 
-        <button class="btn btn-brand btn-lg w-100"><span>Add to cart</span></button>
+        <button class="btn btn-accent btn-lg w-100">Add to cart</button>
       </form>
 
-      <div class="d-flex gap-4 mt-4 pt-3" style="border-top:1px solid var(--line);">
-        <div class="small text-mute">Flat $5 shipping</div>
-        <div class="small text-mute">30-day returns</div>
+      <div class="d-flex gap-4 mt-4 pt-3" style="border-top:1px solid var(--line)">
+        <div class="text-mute" style="font-size:.82rem">Flat $5 delivery</div>
+        <div class="text-mute" style="font-size:.82rem">30-day returns</div>
+        <div class="text-mute" style="font-size:.82rem"><%= totalStock %> in stock</div>
       </div>
 
     <% } %>
