@@ -129,7 +129,15 @@
           </span>
         </div>
 
-        <a href="/checkout" class="btn btn-accent btn-lg w-100 mb-2">Checkout</a>
+        <% if (user) { %>
+          <a href="/checkout" class="btn btn-accent btn-lg w-100 mb-2">Checkout</a>
+        <% } else { %>
+          <a href="/checkout" class="btn btn-accent btn-lg w-100 mb-2">Log in to checkout</a>
+          <p class="text-mute text-center mb-2" style="font-size:.79rem">
+            Your cart is saved and will be waiting after you log in.
+          </p>
+        <% } %>
+
         <a href="/shop" class="btn btn-plain w-100">Keep shopping</a>
 
         <div class="text-mute text-center mt-3" style="font-size:.76rem">

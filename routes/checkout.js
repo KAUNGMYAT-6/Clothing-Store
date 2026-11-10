@@ -2,33 +2,33 @@ const express = require('express');
 const Stripe = require('stripe');
 const pool = require('../db/pool');
 const { getOrCreateCart, getCartItems } = require('../lib/cart');
+const { requireLogin } = require('../middleware/auth');
 const { SHIPPING_FEE, CURRENCY } = require('../lib/config');
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const router = express.Router();
 
-// --- Checkout page ---
-router.get('/checkout', async (req, res) => {
+// --- Checkout page (login required) ---
+router.get('/checkout', requireLogin, async (req, res) => {
   try {
-    if (!req.session.user && !req.session.guestToken) {
-      return res.redirect('/cart');
-    }
-
     const cart = await getOrCreateCart(req);
     const items = await getCartItems(cart.id);
 
-    if (items.length === 0) return res.redirect('/cart');
+    if (items.length === 0) {
+      req.flash('info', 'Your cart is empty.');
+      return res.redirect('/cart');
+    }
 
-    // Anything out of stock blocks checkout
     const unavailable = items.filter(i => i.stock_quantity < i.quantity);
     if (unavailable.length) {
-      return res.redirect('/cart?error=stock');
+      req.flash('warning',
+        `${unavailable[0].name} doesn't have enough stock any more. Please update your cart.`);
+      return res.redirect('/cart');
     }
 
     const subtotal = items.reduce(
-      (sum, i) => sum + Number(i.current_price) * i.quantity,
-      0
+      (sum, i) => sum + Number(i.current_price) * i.quantity, 0
     );
 
     res.render('checkout/index', {
@@ -41,32 +41,39 @@ router.get('/checkout', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Could not load checkout');
+    res.status(500).render('errors/500', { title: 'Something went wrong' });
   }
 });
 
-// --- Create the order and hand off to Stripe ---
-router.post('/checkout/session', async (req, res) => {
+// --- Create the order and hand off to Stripe (login required) ---
+router.post('/checkout/session', requireLogin, async (req, res) => {
   const { email, shipping_name, shipping_address } = req.body;
 
   const connection = await pool.getConnection();
   try {
     if (!email || !shipping_name || !shipping_address) {
+      req.flash('warning', 'Please fill in your email and shipping address.');
       return res.redirect('/checkout');
     }
 
     const cart = await getOrCreateCart(req);
     const items = await getCartItems(cart.id);
-    if (items.length === 0) return res.redirect('/cart');
+    if (items.length === 0) {
+      req.flash('info', 'Your cart is empty.');
+      return res.redirect('/cart');
+    }
 
-    // Re-check stock at the last moment before taking payment
+    // Last stock check before taking any money
     const unavailable = items.filter(i => i.stock_quantity < i.quantity);
-    if (unavailable.length) return res.redirect('/cart?error=stock');
+    if (unavailable.length) {
+      req.flash('warning',
+        `${unavailable[0].name} doesn't have enough stock any more. Please update your cart.`);
+      return res.redirect('/cart');
+    }
 
     // Prices come from the database, never from the browser
     const subtotal = items.reduce(
-      (sum, i) => sum + Number(i.current_price) * i.quantity,
-      0
+      (sum, i) => sum + Number(i.current_price) * i.quantity, 0
     );
     const total = subtotal + SHIPPING_FEE;
 
@@ -78,7 +85,7 @@ router.post('/checkout/session', async (req, res) => {
          shipping_name, shipping_address)
       VALUES (?, ?, 'pending', ?, ?, ?, ?, ?)
     `, [
-      req.session.user ? req.session.user.id : null,
+      req.session.user.id,
       email, subtotal, SHIPPING_FEE, total,
       shipping_name, shipping_address
     ]);
@@ -98,7 +105,6 @@ router.post('/checkout/session', async (req, res) => {
 
     await connection.commit();
 
-    // Hand off to Stripe's hosted checkout page
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email,
@@ -114,7 +120,7 @@ router.post('/checkout/session', async (req, res) => {
         {
           price_data: {
             currency: CURRENCY,
-            product_data: { name: 'Shipping' },
+            product_data: { name: 'Delivery' },
             unit_amount: Math.round(SHIPPING_FEE * 100)
           },
           quantity: 1
@@ -134,13 +140,14 @@ router.post('/checkout/session', async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error(err);
-    res.status(500).send('Could not start checkout');
+    req.flash('error', 'We could not start checkout. No payment was taken — please try again.');
+    res.redirect('/checkout');
   } finally {
     connection.release();
   }
 });
 
-// --- Success page ---
+// --- Success page (no login gate: the session_id is the key) ---
 router.get('/order/success', async (req, res) => {
   const { session_id } = req.query;
 
@@ -155,16 +162,6 @@ router.get('/order/success', async (req, res) => {
 
     if (!order) return res.redirect('/');
 
-    // Clear the guest cart once the order exists
-    // (the webhook can't do this: it has no session, so no guest token)
-    if (!order.user_id && req.session.guestToken) {
-      await pool.query(
-        'DELETE FROM carts WHERE guest_token = ?',
-        [req.session.guestToken]
-      );
-      delete req.session.guestToken;
-    }
-
     const [items] = await pool.query(
       'SELECT * FROM order_items WHERE order_id = ?',
       [order.id]
@@ -177,7 +174,7 @@ router.get('/order/success', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Could not load order');
+    res.status(500).render('errors/500', { title: 'Something went wrong' });
   }
 });
 
