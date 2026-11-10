@@ -1,0 +1,73 @@
+<%- include('partials/header') %>
+
+<div class="section-head">
+  <div>
+    <div class="eyebrow mb-1">Account</div>
+    <h1><%= user.name %></h1>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <div class="col-lg-4">
+    <div class="surface p-4">
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <div style="width:46px; height:46px; border-radius:13px; background:var(--orange-500); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Outfit',sans-serif; font-weight:700; font-size:1.05rem">
+          <%= user.name.trim().charAt(0).toUpperCase() %>
+        </div>
+        <div style="min-width:0">
+          <div class="font-display fw-semibold"><%= user.name %></div>
+          <div class="text-mute text-truncate" style="font-size:.82rem"><%= user.email %></div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between pt-3" style="border-top:1px solid var(--line)">
+        <span class="text-mute" style="font-size:.86rem">Orders placed</span>
+        <span class="font-display fw-bold"><%= orders.length %></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <h2 class="h5 mb-3">Order history</h2>
+
+    <% if (orders.length === 0) { %>
+      <div class="empty-state">
+        <h3 class="h6 mb-2">No orders yet</h3>
+        <p class="text-mute mb-3">When you buy something it'll show up here.</p>
+        <a href="/shop" class="btn btn-accent">Start shopping</a>
+      </div>
+    <% } else { %>
+      <div class="surface overflow-hidden">
+        <table class="table-clean">
+          <thead>
+            <tr>
+              <th>Order</th><th>Date</th><th>Items</th><th>Status</th><th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% orders.forEach(o => {
+                 let cls = 'is-info';
+                 if (o.status === 'pending')   cls = 'is-low';
+                 if (o.status === 'delivered') cls = 'is-success';
+                 if (o.status === 'cancelled') cls = 'is-out';
+            %>
+              <tr>
+                <td class="font-display fw-bold">#<%= o.id %></td>
+                <td class="text-mute" style="font-size:.84rem">
+                  <%= new Date(o.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                </td>
+                <td><%= o.item_count %></td>
+                <td><span class="badge-soft <%= cls %>"><%= o.status %></span></td>
+                <td class="text-end font-display fw-bold">$<%= Number(o.total).toFixed(2) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
+</div>
+
+<%- include('partials/footer') %>

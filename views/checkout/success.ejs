@@ -1,59 +1,73 @@
 <%- include('../partials/header') %>
 
 <div class="row justify-content-center">
-  <div class="col-md-8">
+  <div class="col-lg-8">
+
     <div class="text-center mb-4">
-      <h1>Thank you for your order</h1>
-      <p class="text-muted">
-        Order #<%= order.id %> &middot; A confirmation has been sent to <%= order.email %>
+      <div style="width:56px; height:56px; border-radius:50%; background:#D1FAE5; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1rem">
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h1 class="mb-2">Order confirmed</h1>
+      <p class="text-mute mb-0">
+        Order <strong class="text-dark">#<%= order.id %></strong> — a confirmation is on its way to <%= order.email %>
       </p>
     </div>
 
     <% if (order.status === 'pending') { %>
-      <div class="alert alert-info">
-        We're still confirming your payment. This page will show the final status shortly &mdash;
-        refresh in a moment.
+      <div class="flash flash--info mb-4">
+        <span class="flash__icon" aria-hidden="true">i</span>
+        <span class="flash__text">We're still confirming your payment with Stripe. Refresh in a moment to see the final status.</span>
       </div>
     <% } %>
 
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title mb-3">Order summary</h5>
+    <div class="surface p-4 mb-3">
+      <div class="panel-title mb-3">What you ordered</div>
 
-        <% items.forEach(item => { %>
-          <div class="d-flex justify-content-between mb-2">
-            <div>
-              <%= item.product_name %><br>
-              <span class="text-muted small"><%= item.color %> · <%= item.size %> × <%= item.quantity %></span>
+      <% items.forEach(item => { %>
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <div class="font-display fw-semibold" style="font-size:.92rem"><%= item.product_name %></div>
+            <div class="text-mute" style="font-size:.79rem">
+              <%= item.color %> · Size <%= item.size %> × <%= item.quantity %>
             </div>
-            <div>$<%= (Number(item.unit_price) * item.quantity).toFixed(2) %></div>
           </div>
-        <% }) %>
+          <div class="font-display fw-semibold">
+            $<%= (Number(item.unit_price) * item.quantity).toFixed(2) %>
+          </div>
+        </div>
+      <% }) %>
 
-        <hr>
-        <div class="d-flex justify-content-between">
-          <span>Subtotal</span><span>$<%= Number(order.subtotal).toFixed(2) %></span>
+      <div class="pt-3" style="border-top:1px solid var(--line)">
+        <div class="d-flex justify-content-between mb-2" style="font-size:.9rem">
+          <span class="text-mute">Subtotal</span>
+          <span>$<%= Number(order.subtotal).toFixed(2) %></span>
         </div>
-        <div class="d-flex justify-content-between">
-          <span>Shipping</span><span>$<%= Number(order.shipping_fee).toFixed(2) %></span>
+        <div class="d-flex justify-content-between mb-3" style="font-size:.9rem">
+          <span class="text-mute">Delivery</span>
+          <span>$<%= Number(order.shipping_fee).toFixed(2) %></span>
         </div>
-        <hr>
-        <div class="d-flex justify-content-between fs-5 fw-bold">
-          <span>Total</span><span>$<%= Number(order.total).toFixed(2) %></span>
+        <div class="d-flex justify-content-between align-items-baseline pt-3"
+             style="border-top:1px solid var(--line)">
+          <span class="font-display fw-bold">Total paid</span>
+          <span class="font-display fw-bold" style="font-size:1.25rem">$<%= Number(order.total).toFixed(2) %></span>
         </div>
-
-        <hr>
-        <h6>Shipping to</h6>
-        <p class="mb-0 text-muted">
-          <%= order.shipping_name %><br>
-          <%= order.shipping_address %>
-        </p>
       </div>
     </div>
 
-    <div class="text-center mt-4">
-      <a href="/" class="btn btn-dark">Continue shopping</a>
+    <div class="surface p-4 mb-4">
+      <div class="panel-title mb-2">Delivering to</div>
+      <p class="text-soft mb-0" style="font-size:.9rem">
+        <%= order.shipping_name %><br>
+        <%= order.shipping_address %>
+      </p>
+      <p class="text-mute mb-0 mt-3" style="font-size:.82rem">Arriving in 2–3 working days.</p>
     </div>
+
+    <div class="d-flex gap-2 justify-content-center">
+      <a href="/account" class="btn btn-soft">View my orders</a>
+      <a href="/shop" class="btn btn-accent">Keep shopping</a>
+    </div>
+
   </div>
 </div>
 

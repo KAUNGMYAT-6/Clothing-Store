@@ -1,70 +1,104 @@
 <%- include('../partials/header') %>
 
-<h1 class="mb-4">Checkout</h1>
+<div style="font-size:.82rem; color:var(--ink-mute)" class="mb-3">
+  <a href="/cart" class="text-mute">Cart</a> <span style="opacity:.5">/</span>
+  <span class="text-soft">Checkout</span>
+</div>
 
-<div class="row">
-  <div class="col-md-7">
-    <% if (!user) { %>
-      <div class="alert alert-light border mb-4">
-        Already have an account? <a href="/login">Log in</a> for faster checkout and order history.
-      </div>
-    <% } %>
+<div class="section-head">
+  <div>
+    <div class="eyebrow mb-1">Almost there</div>
+    <h1>Checkout</h1>
+  </div>
+</div>
 
+<div class="row g-4">
+
+  <!-- FORM -->
+  <div class="col-lg-7">
     <form method="POST" action="/checkout/session">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-      <h5 class="mb-3">Contact</h5>
-      <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input type="email" name="email" class="form-control" required
-               value="<%= user ? user.email : '' %>">
-        <div class="form-text">Your order confirmation will be sent here.</div>
+      <div class="surface p-4 mb-3">
+        <div class="panel-title mb-3">Contact</div>
+        <div>
+          <label for="email" class="form-label">Email</label>
+          <input id="email" type="email" name="email" class="form-control" required
+                 value="<%= user.email %>">
+          <div class="form-text">Your order confirmation goes here.</div>
+        </div>
       </div>
 
-      <h5 class="mb-3 mt-4">Shipping address</h5>
-      <div class="mb-3">
-        <label class="form-label">Full name</label>
-        <input type="text" name="shipping_name" class="form-control" required
-               value="<%= user ? user.name : '' %>">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Address</label>
-        <textarea name="shipping_address" class="form-control" rows="3" required></textarea>
+      <div class="surface p-4 mb-3">
+        <div class="panel-title mb-3">Delivery address</div>
+
+        <div class="mb-3">
+          <label for="shipping_name" class="form-label">Full name</label>
+          <input id="shipping_name" type="text" name="shipping_name" class="form-control" required
+                 value="<%= user.name %>">
+        </div>
+
+        <div>
+          <label for="shipping_address" class="form-label">Address</label>
+          <textarea id="shipping_address" name="shipping_address" class="form-control"
+                    rows="3" required placeholder="Block and unit, street, postal code"></textarea>
+        </div>
       </div>
 
-      <button class="btn btn-dark btn-lg w-100 mt-3">Continue to payment</button>
+      <div class="surface p-4 mb-3">
+        <div class="panel-title mb-2">Payment</div>
+        <p class="text-mute mb-0" style="font-size:.86rem">
+          You'll enter your card details on Stripe's secure payment page after this step.
+          Nothing is charged until you confirm there.
+        </p>
+      </div>
+
+      <button class="btn btn-accent btn-lg w-100">Continue to payment</button>
     </form>
   </div>
 
-  <div class="col-md-5">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title mb-3">Order summary</h5>
+  <!-- SUMMARY -->
+  <div class="col-lg-5">
+    <div class="surface p-4">
+      <div class="panel-title mb-3">Order summary</div>
 
-        <% items.forEach(item => { %>
-          <div class="d-flex justify-content-between small mb-2">
-            <div>
-              <%= item.name %><br>
-              <span class="text-muted"><%= item.color %> · <%= item.size %> × <%= item.quantity %></span>
+      <% items.forEach(item => { %>
+        <div class="d-flex gap-3 mb-3">
+          <img src="<%= item.image_url || 'https://placehold.co/80x107/EEF2FF/8785A8?text=D' %>"
+               alt="<%= item.name %>" width="48" height="64"
+               style="border-radius:8px; object-fit:cover; flex-shrink:0">
+          <div style="flex:1; min-width:0">
+            <div class="font-display fw-semibold" style="font-size:.88rem"><%= item.name %></div>
+            <div class="text-mute" style="font-size:.76rem">
+              <%= item.color %> · <%= item.size %> × <%= item.quantity %>
             </div>
-            <div>$<%= (Number(item.current_price) * item.quantity).toFixed(2) %></div>
           </div>
-        <% }) %>
+          <div class="font-display fw-semibold" style="font-size:.88rem">
+            $<%= (Number(item.current_price) * item.quantity).toFixed(2) %>
+          </div>
+        </div>
+      <% }) %>
 
-        <hr>
-        <div class="d-flex justify-content-between">
-          <span>Subtotal</span><span>$<%= subtotal.toFixed(2) %></span>
+      <div class="pt-3" style="border-top:1px solid var(--line)">
+        <div class="d-flex justify-content-between mb-2" style="font-size:.9rem">
+          <span class="text-mute">Subtotal</span>
+          <span class="fw-semibold">$<%= subtotal.toFixed(2) %></span>
         </div>
-        <div class="d-flex justify-content-between">
-          <span>Shipping</span><span>$<%= shippingFee.toFixed(2) %></span>
+        <div class="d-flex justify-content-between mb-3" style="font-size:.9rem">
+          <span class="text-mute">Delivery</span>
+          <span class="fw-semibold">$<%= shippingFee.toFixed(2) %></span>
         </div>
-        <hr>
-        <div class="d-flex justify-content-between fs-5 fw-bold">
-          <span>Total</span><span>$<%= total.toFixed(2) %></span>
+        <div class="d-flex justify-content-between align-items-baseline pt-3"
+             style="border-top:1px solid var(--line)">
+          <span class="font-display fw-bold">Total</span>
+          <span class="font-display fw-bold" style="font-size:1.3rem">$<%= total.toFixed(2) %></span>
         </div>
       </div>
+
+      <a href="/cart" class="btn btn-plain w-100 mt-4">Back to cart</a>
     </div>
   </div>
+
 </div>
 
 <%- include('../partials/footer') %>
