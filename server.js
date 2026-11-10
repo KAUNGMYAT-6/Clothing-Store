@@ -73,10 +73,10 @@ app.use(session({
 // Passport handles authentication only; sessions stay ours
 app.use(passport.initialize());
 
-// Flash messages — after sessions (it uses req.session), before routes (they call req.flash)
+// Flash messages — after sessions, before routes
 app.use(flash);
 
-// ---------- CSRF (synchroniser token pattern: the token lives in the session) ----------
+// ---------- CSRF (synchroniser token pattern) ----------
 const { csrfSynchronisedProtection, generateToken } = csrfSync({
   getTokenFromRequest: (req) => req.body._csrf
 });
@@ -89,13 +89,25 @@ app.use((req, res, next) => {
 app.use(csrfSynchronisedProtection);
 
 // ---------- Rate limiting ----------
-const authLimiter = rateLimit({
+// Keyed by IP. Generous enough for shared networks (a campus or office
+// behind one NAT), tight enough to stop scripted brute force.
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: 'Too many attempts. Please try again later.'
+  max: 50,
+  message: 'Too many attempts. Please try again in a few minutes.'
 });
 
-app.use(['/login', '/register'], authLimiter);
+// Password resets send email, so they cost more than a page view.
+// A second, per-account limit lives in routes/auth.js — IP limits alone
+// don't stop a distributed attack on one person's inbox.
+const resetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: 'Too many reset requests. Please try again later.'
+});
+
+app.use(['/login', '/register'], loginLimiter);
+app.use('/forgot-password', resetLimiter);
 
 // ---------- Template locals ----------
 app.use((req, res, next) => {
@@ -118,7 +130,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// Categories for the nav dropdown, on every page
+// Categories for the nav dropdown
 app.use(async (req, res, next) => {
   try {
     const [cats] = await pool.query(`
