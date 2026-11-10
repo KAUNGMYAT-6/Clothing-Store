@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
     revealables.forEach(el => io.observe(el));
   } else {
     revealables.forEach(el => el.classList.add('is-visible'));
@@ -36,37 +35,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---- Quantity steppers ----
   document.querySelectorAll('[data-stepper]').forEach(stepper => {
     const input = stepper.querySelector('input');
+    const down  = stepper.querySelector('[data-step="down"]');
+    const up    = stepper.querySelector('[data-step="up"]');
     const max = input.max ? parseInt(input.max, 10) : Infinity;
     const min = input.min ? parseInt(input.min, 10) : 1;
 
-    const update = (delta) => {
+    const sync = () => {
+      const v = parseInt(input.value, 10) || min;
+      down.disabled = v <= min;
+      up.disabled   = v >= max;
+    };
+    const step = (delta) => {
       const next = Math.min(max, Math.max(min, (parseInt(input.value, 10) || min) + delta));
       input.value = next;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
       sync();
     };
 
-    const sync = () => {
-      const v = parseInt(input.value, 10) || min;
-      stepper.querySelector('[data-step="down"]').disabled = v <= min;
-      stepper.querySelector('[data-step="up"]').disabled = v >= max;
-    };
-
-    stepper.querySelector('[data-step="down"]').addEventListener('click', () => update(-1));
-    stepper.querySelector('[data-step="up"]').addEventListener('click', () => update(1));
+    down.addEventListener('click', () => step(-1));
+    up.addEventListener('click', () => step(1));
+    input.addEventListener('change', sync);
     sync();
   });
 
-  // ---- Cart badge bump when the count changed this page load ----
+  // ---- Cart badge bump when the count changed ----
   const pill = document.getElementById('cartPill');
   if (pill) {
     const count = pill.querySelector('.count').textContent.trim();
-    const last = sessionStorage.getItem('cartCount');
-    if (last !== null && last !== count) {
-      pill.classList.add('is-bumped');
-      setTimeout(() => pill.classList.remove('is-bumped'), 450);
-    }
-    try { sessionStorage.setItem('cartCount', count); } catch (e) {}
+    try {
+      const last = sessionStorage.getItem('cartCount');
+      if (last !== null && last !== count) {
+        pill.classList.add('is-bumped');
+        setTimeout(() => pill.classList.remove('is-bumped'), 460);
+      }
+      sessionStorage.setItem('cartCount', count);
+    } catch (e) { /* private browsing */ }
   }
 
 });
