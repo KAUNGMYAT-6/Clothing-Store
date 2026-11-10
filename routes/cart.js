@@ -1,14 +1,14 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { getOrCreateCart, getCartItems } = require('../lib/cart');
-
+const { SHIPPING_FEE } = require('../lib/config');
 const router = express.Router();
 
 // --- View cart ---
 router.get('/cart', async (req, res) => {
   try {
     if (!req.session.user && !req.session.guestToken) {
-      return res.render('cart/index', { title: 'Your cart', items: [], subtotal: 0 });
+      return res.render('cart/index', { title: 'Your cart', items: [], subtotal: 0, shippingFee: SHIPPING_FEE });
     }
 
     const cart = await getOrCreateCart(req);
@@ -19,7 +19,7 @@ router.get('/cart', async (req, res) => {
       0
     );
 
-    res.render('cart/index', { title: 'Your cart', items, subtotal });
+    res.render('cart/index', { title: 'Your cart', items, subtotal, shippingFee: SHIPPING_FEE });
   } catch (err) {
     console.error(err);
     req.flash('error', 'We could not load your cart. Please try again.');

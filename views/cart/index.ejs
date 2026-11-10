@@ -1,82 +1,143 @@
 <%- include('../partials/header') %>
 
-<h1 class="mb-4">Your cart</h1>
+<div class="section-head">
+  <div>
+    <div class="eyebrow mb-1">Your bag</div>
+    <h1>Cart</h1>
+  </div>
+  <a href="/shop" class="btn btn-sm btn-plain d-none d-sm-inline-flex">Keep shopping</a>
+</div>
 
 <% if (items.length === 0) { %>
+
   <div class="empty-state">
+    <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#A5B4FC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="mb-3"><path d="M6 2h12l2 6H4z"/><path d="M4 8v12a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8"/><path d="M9 12h6"/></svg>
     <h3 class="h5 mb-2">Your cart is empty</h3>
-    <p class="text-mute mb-3">Nothing here yet.</p>
-    <a href="/shop" class="btn btn-brand"><span>Browse products</span></a>
+    <p class="text-mute mb-3">Nothing here yet — new pieces drop every Friday.</p>
+    <a href="/shop" class="btn btn-accent">Browse products</a>
   </div>
+
 <% } else { %>
 
-  <div class="table-responsive surface p-2">
-    <table class="table align-middle mb-0">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Price</th>
-          <th style="width: 150px;">Quantity</th>
-          <th class="text-end">Total</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% items.forEach(item => { %>
-          <tr>
-            <td>
-              <div class="d-flex align-items-center">
-                <img src="<%= item.image_url || 'https://placehold.co/80x100/FAF8FC/8B8398?text=D' %>"
-                     alt="<%= item.name %>" width="60" class="rounded me-3">
-                <div>
-                  <a href="/products/<%= item.slug %>" class="text-decoration-none">
-                    <strong class="text-dark"><%= item.name %></strong>
-                  </a>
-                  <div class="text-mute small"><%= item.color %> · Size <%= item.size %></div>
+  <div class="row g-4">
 
-                  <% if (Number(item.stock_quantity) === 0) { %>
-                    <span class="badge-soft is-out mt-1">Out of stock</span>
-                  <% } else if (Number(item.stock_quantity) < item.quantity) { %>
-                    <span class="badge-soft is-low mt-1">Only <%= item.stock_quantity %> left</span>
-                  <% } %>
+    <!-- ITEMS -->
+    <div class="col-lg-8">
+      <div class="surface overflow-hidden">
+        <table class="table-clean">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th style="width:130px">Quantity</th>
+              <th class="text-end">Total</th>
+              <th style="width:52px"><span class="visually-hidden">Remove</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach(item => {
+                 const stock = Number(item.stock_quantity);
+                 const priceChanged = Number(item.added_price) !== Number(item.current_price);
+            %>
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <a href="/products/<%= item.slug %>" style="flex-shrink:0">
+                      <img src="<%= item.image_url || 'https://placehold.co/80x107/EEF2FF/8785A8?text=D' %>"
+                           alt="<%= item.name %>" width="58" height="77"
+                           style="border-radius:9px; object-fit:cover; display:block">
+                    </a>
+                    <div style="min-width:0">
+                      <a href="/products/<%= item.slug %>" class="text-decoration-none">
+                        <div class="font-display fw-semibold text-dark" style="font-size:.93rem"><%= item.name %></div>
+                      </a>
+                      <div class="text-mute" style="font-size:.79rem"><%= item.color %> · Size <%= item.size %></div>
+                      <div class="text-mute" style="font-size:.79rem">$<%= Number(item.current_price).toFixed(2) %> each</div>
 
-                  <% if (Number(item.added_price) !== Number(item.current_price)) { %>
-                    <div class="text-mute small mt-1">
-                      Price changed from $<%= item.added_price %>
+                      <% if (stock === 0) { %>
+                        <span class="badge-soft is-danger mt-1">Out of stock</span>
+                      <% } else if (stock < item.quantity) { %>
+                        <span class="badge-soft is-low mt-1">Only <%= stock %> left</span>
+                      <% } %>
+
+                      <% if (priceChanged) { %>
+                        <div class="text-mute mt-1" style="font-size:.75rem">
+                          Was $<%= Number(item.added_price).toFixed(2) %>
+                        </div>
+                      <% } %>
                     </div>
-                  <% } %>
-                </div>
-              </div>
-            </td>
-            <td>$<%= Number(item.current_price).toFixed(2) %></td>
-            <td>
-              <form method="POST" action="/cart/update" class="d-flex gap-1">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <input type="hidden" name="item_id" value="<%= item.id %>">
-                <input type="number" name="quantity" value="<%= item.quantity %>"
-                       min="1" class="form-control form-control-sm">
-                <button class="btn btn-sm btn-outline-brand">Update</button>
-              </form>
-            </td>
-            <td class="text-end fw-semibold">
-              $<%= (Number(item.current_price) * item.quantity).toFixed(2) %>
-            </td>
-            <td class="text-end">
-              <form method="POST" action="/cart/remove">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <input type="hidden" name="item_id" value="<%= item.id %>">
-                <button class="btn btn-sm btn-ghost text-danger">Remove</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+                  </div>
+                </td>
 
-  <div class="d-flex justify-content-end align-items-center gap-4 mt-4">
-    <div class="fs-5">Subtotal <strong>$<%= subtotal.toFixed(2) %></strong></div>
-    <a href="/checkout" class="btn btn-brand btn-lg"><span>Checkout</span></a>
+                <td>
+                  <form method="POST" action="/cart/update">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="item_id" value="<%= item.id %>">
+                    <span class="stepper" data-stepper data-autosubmit>
+                      <button type="button" data-step="down" aria-label="Decrease quantity of <%= item.name %>">&minus;</button>
+                      <input type="number" name="quantity" value="<%= item.quantity %>"
+                             min="1" max="<%= Math.max(stock, 1) %>"
+                             aria-label="Quantity of <%= item.name %>">
+                      <button type="button" data-step="up" aria-label="Increase quantity of <%= item.name %>">+</button>
+                    </span>
+                    <noscript>
+                      <button class="btn btn-sm btn-soft mt-1">Update</button>
+                    </noscript>
+                  </form>
+                </td>
+
+                <td class="text-end">
+                  <span class="font-display fw-bold">
+                    $<%= (Number(item.current_price) * item.quantity).toFixed(2) %>
+                  </span>
+                </td>
+
+                <td class="text-end">
+                  <form method="POST" action="/cart/remove">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="item_id" value="<%= item.id %>">
+                    <button class="btn-icon btn-icon--danger" aria-label="Remove <%= item.name %> from cart">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="col-lg-4">
+      <div class="surface p-4">
+        <div class="panel-title mb-3">Order summary</div>
+
+        <div class="d-flex justify-content-between mb-2" style="font-size:.9rem">
+          <span class="text-mute">Subtotal</span>
+          <span class="fw-semibold">$<%= subtotal.toFixed(2) %></span>
+        </div>
+        <div class="d-flex justify-content-between mb-3" style="font-size:.9rem">
+          <span class="text-mute">Delivery</span>
+          <span class="fw-semibold">$<%= shippingFee.toFixed(2) %></span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-baseline pt-3 mb-4"
+             style="border-top:1px solid var(--line)">
+          <span class="font-display fw-bold">Total</span>
+          <span class="font-display fw-bold" style="font-size:1.3rem">
+            $<%= (subtotal + shippingFee).toFixed(2) %>
+          </span>
+        </div>
+
+        <a href="/checkout" class="btn btn-accent btn-lg w-100 mb-2">Checkout</a>
+        <a href="/shop" class="btn btn-plain w-100">Keep shopping</a>
+
+        <div class="text-mute text-center mt-3" style="font-size:.76rem">
+          Secure payment handled by Stripe
+        </div>
+      </div>
+    </div>
+
   </div>
 
 <% } %>

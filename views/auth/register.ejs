@@ -1,35 +1,62 @@
 <%- include('../partials/header') %>
 
 <div class="row justify-content-center">
-  <div class="col-md-5">
-    <h1 class="mb-4">Create account</h1>
+  <div class="col-md-6 col-lg-5">
+    <div class="text-center mb-4">
+      <div class="eyebrow mb-2">Join Denise</div>
+      <h1>Create your account</h1>
+    </div>
 
-    <% if (error) { %>
-      <div class="alert alert-danger"><%= error %></div>
-    <% } %>
+    <div class="surface p-4 p-md-5">
+      <% if (error) { %>
+        <div class="flash flash--error mb-3">
+          <span class="flash__icon" aria-hidden="true">✕</span>
+          <span class="flash__text"><%= error %></span>
+        </div>
+      <% } %>
 
-    <form method="POST" action="/register">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="mb-3">
-        <label class="form-label">Name</label>
-        <input type="text" name="name" class="form-control" required>
+      <form method="POST" action="/register" id="registerForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="mb-3">
+          <label for="name" class="form-label">Full name</label>
+          <input id="name" type="text" name="name" class="form-control" required
+                 value="<%= typeof values !== 'undefined' && values.name ? values.name : '' %>">
+        </div>
+
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input id="email" type="email" name="email" class="form-control" required
+                 value="<%= typeof values !== 'undefined' && values.email ? values.email : '' %>">
+        </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input id="password" type="password" name="password" class="form-control"
+                 minlength="8" required data-pw>
+          <div class="form-text">At least 8 characters.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="confirm_password" class="form-label">Confirm password</label>
+          <input id="confirm_password" type="password" name="confirm_password" class="form-control"
+                 minlength="8" required data-pw-confirm>
+          <div class="form-text" data-pw-feedback></div>
+        </div>
+
+        <button class="btn btn-accent btn-lg w-100">Create account</button>
+      </form>
+
+      <div class="d-flex align-items-center gap-3 my-3">
+        <span style="flex:1; height:1px; background:var(--line)"></span>
+        <span class="text-mute" style="font-size:.78rem">or</span>
+        <span style="flex:1; height:1px; background:var(--line)"></span>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input type="email" name="email" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Password</label>
-        <input type="password" name="password" class="form-control" minlength="8" required>
-        <div class="form-text">At least 8 characters.</div>
-      </div>
-      <button class="btn btn-dark w-100">Create account</button>
-    </form>
 
-    <div class="text-center my-3 text-muted small">or</div>
-    <a href="/auth/google" class="btn btn-outline-dark w-100">Continue with Google</a>
+      <a href="/auth/google" class="btn btn-plain w-100">Continue with Google</a>
+    </div>
 
-    <p class="mt-3 text-center">
+    <p class="text-center text-mute mt-3" style="font-size:.88rem">
       Already have an account? <a href="/login">Log in</a>
     </p>
   </div>

@@ -218,6 +218,7 @@ a:hover { color: var(--orange-500); }
 }
 .stepper button:hover:not(:disabled) { background: var(--indigo-600); color: #fff; transform: scale(1.1); }
 .stepper button:disabled { opacity: .35; cursor: not-allowed; }
+
 .stepper input {
   width: 38px; border: none; background: transparent; text-align: center;
   font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .86rem;
@@ -225,6 +226,7 @@ a:hover { color: var(--orange-500); }
 }
 .stepper input::-webkit-outer-spin-button,
 .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stepper.is-saving { opacity: .6; pointer-events: none; }
 
 /* ---------------- Cards ---------------- */
 .surface { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-sm); }
