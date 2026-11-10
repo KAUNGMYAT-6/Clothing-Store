@@ -5,29 +5,32 @@
     <div class="footer-rule"></div>
     <div class="row g-4">
       <div class="col-md-5">
-        <div class="brand text-white mb-2" style="color:#fff !important;">Denise<span>Clothing</span></div>
-        <p class="small mb-0" style="max-width: 320px;">
-          Considered pieces, made to last. A demo storefront built with Node.js, Express and MySQL.
+        <div class="brand d-inline-block mb-3">DENISE</div>
+        <p class="mb-0" style="max-width: 300px;">
+          Trend-led pieces, dropped weekly. Built as a portfolio project with
+          Node.js, Express and MySQL.
         </p>
       </div>
       <div class="col-6 col-md-3">
-        <div class="text-white small fw-semibold mb-2">Shop</div>
-        <div class="d-flex flex-column gap-1">
+        <div class="col-title">Shop</div>
+        <div class="d-flex flex-column gap-2">
           <a href="/shop">All products</a>
           <a href="/shop?department=women">Women</a>
           <a href="/shop?department=men">Men</a>
+          <a href="/shop?department=unisex">Unisex</a>
         </div>
       </div>
       <div class="col-6 col-md-4">
-        <div class="text-white small fw-semibold mb-2">Account</div>
-        <div class="d-flex flex-column gap-1">
-          <a href="/account">My account</a>
+        <div class="col-title">Account</div>
+        <div class="d-flex flex-column gap-2">
+          <a href="/account">My orders</a>
           <a href="/cart">Cart</a>
+          <% if (!user) { %><a href="/register">Create an account</a><% } %>
         </div>
       </div>
     </div>
-    <div class="small mt-4 pt-4" style="border-top:1px solid rgba(255,255,255,.1);">
-      &copy; <%= new Date().getFullYear() %> DeniseClothing · Demo project
+    <div class="mt-4 pt-4" style="border-top:1px solid rgba(255,255,255,.1); font-size:.82rem;">
+      &copy; <%= new Date().getFullYear() %> DeniseClothing — demo project
     </div>
   </div>
 </footer>

@@ -103,6 +103,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Cart count for the navbar badge
 app.use(async (req, res, next) => {
   try {
     if (req.session.user || req.session.guestToken) {
@@ -111,11 +112,27 @@ app.use(async (req, res, next) => {
     } else {
       res.locals.cartCount = 0;
     }
-    next();
   } catch (err) {
     res.locals.cartCount = 0;
-    next();
   }
+  next();
+});
+
+// Categories for the nav dropdown, on every page
+app.use(async (req, res, next) => {
+  try {
+    const [cats] = await pool.query(`
+      SELECT c.id, c.name, COUNT(p.id) AS product_count
+      FROM categories c
+      LEFT JOIN products p ON p.category_id = c.id AND p.is_active = TRUE
+      GROUP BY c.id, c.name
+      ORDER BY c.name
+    `);
+    res.locals.navCategories = cats;
+  } catch (err) {
+    res.locals.navCategories = [];
+  }
+  next();
 });
 
 // ---------- Routes ----------
@@ -126,16 +143,7 @@ app.use('/', authRoutes);
 app.use('/', cartRoutes);
 app.use('/', checkoutRoutes);
 
-// ---------- Error handling (must be last, and take four arguments) ----------
-app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN' || err.message === 'invalid csrf token') {
-    return res.status(403).send('Your session expired. Please go back and try again.');
-  }
-  console.error(err);
-  res.status(500).send('Something went wrong.');
-});
-
-// ---------- 404: no route matched ----------
+// ---------- 404: nothing above matched ----------
 app.use((req, res) => {
   res.status(404).render('errors/404', { title: 'Page not found' });
 });
@@ -144,7 +152,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN' || err.message === 'invalid csrf token') {
     req.flash('warning', 'Your session expired. Please try that again.');
-    return res.redirect('back');
+    return res.redirect(req.get('Referer') || '/');
   }
 
   console.error(err);
