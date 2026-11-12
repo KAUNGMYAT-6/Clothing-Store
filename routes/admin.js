@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
       SELECT
         (SELECT COUNT(*) FROM orders WHERE status = 'paid')      AS paid_orders,
         (SELECT COUNT(*) FROM orders WHERE status = 'pending')   AS pending_orders,
-        (SELECT COALESCE(SUM(total), 0) FROM orders WHERE status != 'pending') AS revenue,
+        (SELECT COALESCE(SUM(total), 0) FROM orders WHERE status NOT IN ('pending', 'cancelled')) AS revenue,
         (SELECT COUNT(*) FROM products WHERE is_active = TRUE)   AS active_products,
         (SELECT COUNT(*) FROM product_variants WHERE stock_quantity = 0) AS out_of_stock
     `);
@@ -42,31 +42,37 @@ router.get('/', async (req, res) => {
       LIMIT 6
     `);
 
+    // DATE_FORMAT hands the day back as plain text ('2026-11-12').
+    // A DATE column would arrive as a JavaScript Date, and converting
+    // that with toISOString() shifts it into UTC — in Singapore (UTC+8)
+    // that moved every sale onto the previous day's bar.
     const [rows] = await pool.query(`
-      SELECT DATE(created_at) AS day, COALESCE(SUM(total), 0) AS revenue
+      SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS day,
+             COALESCE(SUM(total), 0) AS revenue
       FROM orders
-      WHERE status != 'pending'
+      WHERE status NOT IN ('pending', 'cancelled')
         AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-      GROUP BY DATE(created_at)
+      GROUP BY day
+    `);
+
+    const byDay = {};
+    rows.forEach(r => { byDay[r.day] = Number(r.revenue); });
+
+    // The seven days themselves also come from the database, so "today"
+    // means the same thing in both queries
+    const [days] = await pool.query(`
+      SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n DAY), '%Y-%m-%d') AS day,
+             DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n DAY), '%a')       AS label
+      FROM (SELECT 6 AS n UNION SELECT 5 UNION SELECT 4 UNION SELECT 3
+            UNION SELECT 2 UNION SELECT 1 UNION SELECT 0) AS offsets
+      ORDER BY n DESC
     `);
 
     // GROUP BY only returns days that have orders, so fill the gaps
-    const byDay = {};
-    rows.forEach(r => {
-      const key = new Date(r.day).toISOString().slice(0, 10);
-      byDay[key] = Number(r.revenue);
-    });
-
-    const chart = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      chart.push({
-        label: d.toLocaleDateString('en-SG', { weekday: 'short' }),
-        revenue: byDay[key] || 0
-      });
-    }
+    const chart = days.map(d => ({
+      label: d.label,
+      revenue: byDay[d.day] || 0
+    }));
 
     const [lowStock] = await pool.query(`
       SELECT v.id, v.size, v.color, v.stock_quantity,
@@ -218,19 +224,21 @@ router.get('/products/new', async (req, res) => {
 router.post('/products', upload.single('image'), async (req, res) => {
   const { name, slug, description, price, category_id, department } = req.body;
 
+  // Validate BEFORE borrowing a connection. The old version took one
+  // first, released it here, and then released it again in `finally`.
+  if (!name || !slug || !price || !category_id) {
+    const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
+    return res.status(400).render('admin/product-form', {
+      title: 'New product',
+      active: 'products',
+      product: req.body,
+      categories,
+      error: 'Name, slug, price and category are all required.'
+    });
+  }
+
   const connection = await pool.getConnection();
   try {
-    if (!name || !slug || !price || !category_id) {
-      const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
-      connection.release();
-      return res.status(400).render('admin/product-form', {
-        title: 'New product',
-        active: 'products',
-        product: req.body,
-        categories,
-        error: 'Name, slug, price and category are all required.'
-      });
-    }
 
     // Upload before the transaction: a slow network call shouldn't hold
     // a database lock open

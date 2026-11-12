@@ -8,7 +8,7 @@
     </div>
 
     <div class="surface p-4 p-md-5">
-      <% if (error) { %>
+      <% if (locals.error) { %>
         <div class="flash flash--error mb-3">
           <span class="flash__icon" aria-hidden="true">✕</span>
           <span class="flash__text"><%= error %></span>
@@ -20,7 +20,8 @@
 
         <div class="mb-3">
           <label for="email" class="form-label">Email</label>
-          <input id="email" type="email" name="email" class="form-control" required autofocus>
+          <input id="email" type="email" name="email" class="form-control" required autofocus
+                 value="<%= locals.values && values.email ? values.email : '' %>">
         </div>
 
         <div class="mb-4">

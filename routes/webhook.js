@@ -102,7 +102,10 @@ async function fulfilOrder(session) {
     // Send after committing: a mail failure must not roll back a paid order,
     // and its own try/catch stops a dead mail service returning 500 to Stripe
     try {
-      await sendOrderConfirmation(order, items);
+      // Resend reports most failures in the response instead of throwing,
+      // so without this check a rejected email still logged "sent"
+      const result = await sendOrderConfirmation(order, items);
+      if (result && result.error) throw new Error(result.error.message);
       console.log(`Confirmation email sent for order ${order.id}`);
     } catch (mailErr) {
       console.error(`Email failed for order ${order.id}:`, mailErr);

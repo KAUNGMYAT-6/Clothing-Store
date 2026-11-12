@@ -118,7 +118,7 @@
 
       <form method="POST"
             action="/account/settings/photo?_csrf=<%= encodeURIComponent(csrfToken) %>"
-            enctype="multipart/form-data" data-live-preview>
+            enctype="multipart/form-data">
         <div class="mb-3">
           <label for="photo" class="form-label">Upload a new photo</label>
           <input id="photo" type="file" name="photo" class="form-control"

@@ -42,7 +42,7 @@ router.get('/orders', async (req, res, next) => {
       SELECT
         o.id,
         o.status,
-        o.total_amount,
+        o.total,
         o.created_at,
         (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count,
         (SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id = o.id) AS unit_count,
@@ -83,7 +83,9 @@ router.get('/orders', async (req, res, next) => {
 router.get('/orders/:id', async (req, res, next) => {
   try {
     const orderId = parseInt(req.params.id, 10);
-    if (!Number.isInteger(orderId)) return res.status(404).render('errors/404');
+    if (!Number.isInteger(orderId)) {
+      return res.status(404).render('errors/404', { title: 'Order not found' });
+    }
 
     // AND user_id = ? is the whole security story here.
     // Without it, changing the number in the URL would show
@@ -93,7 +95,9 @@ router.get('/orders/:id', async (req, res, next) => {
       [orderId, req.session.user.id]
     );
 
-    if (!order) return res.status(404).render('errors/404');
+    if (!order) {
+      return res.status(404).render('errors/404', { title: 'Order not found' });
+    }
 
     const [items] = await pool.query(`
       SELECT

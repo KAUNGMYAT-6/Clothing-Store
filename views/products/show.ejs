@@ -205,7 +205,7 @@
           <% if (myReview) { %>
             <form method="POST" action="/products/<%= product.slug %>/reviews/delete" class="mt-2">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button class="btn btn-sm btn-ghost-dark">Delete my review</button>
+              <button class="btn btn-sm btn-plain">Delete my review</button>
             </form>
           <% } %>
         </div>

@@ -85,9 +85,11 @@
     <div class="surface p-4 mb-3">
       <div class="panel-title mb-3">Summary</div>
       <%
-        const total = Number(order.total_amount);
-        const shipping = order.shipping_fee != null ? Number(order.shipping_fee) : 5;
-        const subtotal = total - shipping;
+        // Stored on the order at checkout, so these never change even
+        // if prices or the delivery fee do later
+        const subtotal = Number(order.subtotal);
+        const shipping = Number(order.shipping_fee);
+        const total = Number(order.total);
       %>
       <div class="d-flex justify-content-between mb-2" style="font-size:.9rem">
         <span class="text-mute">Subtotal</span><span>$<%= subtotal.toFixed(2) %></span>
@@ -101,21 +103,12 @@
       </div>
     </div>
 
-    <% if (order.shipping_line1 || order.shipping_address) { %>
-      <div class="surface p-4">
-        <div class="panel-title mb-3">Delivering to</div>
-        <address class="mb-0 text-soft" style="font-size:.88rem; line-height:1.7">
-          <% if (order.shipping_name) { %><%= order.shipping_name %><br><% } %>
-          <% if (order.shipping_address) { %>
-            <%= order.shipping_address %>
-          <% } else { %>
-            <%= order.shipping_line1 %><br>
-            <% if (order.shipping_line2) { %><%= order.shipping_line2 %><br><% } %>
-            <%= order.shipping_city %> <%= order.shipping_postal_code %>
-          <% } %>
-        </address>
-      </div>
-    <% } %>
+    <div class="surface p-4">
+      <div class="panel-title mb-3">Delivering to</div>
+      <%# pre-line keeps the line breaks the customer typed in the textarea %>
+      <address class="mb-0 text-soft" style="font-size:.88rem; line-height:1.7; white-space:pre-line"><%= order.shipping_name %>
+<%= order.shipping_address %></address>
+    </div>
   </div>
 </div>
 

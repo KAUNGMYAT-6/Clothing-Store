@@ -122,8 +122,11 @@ const resetLimiter = rateLimit({
   message: 'Too many reset requests. Please try again later.'
 });
 
-app.use(['/login', '/register'], loginLimiter);
-app.use('/forgot-password', resetLimiter);
+// POST only. With app.use() these also counted every page VIEW, so
+// loading the forgot-password page and its redirects used up the
+// allowance: three honest attempts and you were locked out for an hour.
+app.post(['/login', '/register'], loginLimiter);
+app.post('/forgot-password', resetLimiter);
 
 // ---------- Live template data ----------
 // Cart count for the navbar badge
@@ -178,10 +181,15 @@ app.use((err, req, res, next) => {
     return res.redirect(req.get('Referer') || '/');
   }
 
-  // Multer rejected the upload (too large, wrong type)
+  // Multer rejected the upload. These are the user's mistake, not ours,
+  // so they get a message and go back to the form rather than a 500 page.
   if (err.code === 'LIMIT_FILE_SIZE') {
     if (req.flash) req.flash('error', 'That file is too large. Maximum size is 5 MB.');
-    return res.redirect(req.get('Referer') || '/admin/products');
+    return res.redirect(req.get('Referer') || '/');
+  }
+  if (err.code === 'INVALID_FILE_TYPE') {
+    if (req.flash) req.flash('error', err.message);
+    return res.redirect(req.get('Referer') || '/');
   }
 
   console.error(err);

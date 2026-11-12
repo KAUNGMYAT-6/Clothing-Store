@@ -65,6 +65,8 @@
         <% } %>
 
         <!-- RIGHT SIDE -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+
           <% if (user) { %>
             <div class="dropdown">
               <button class="nav-avatar" type="button" id="userMenu"
@@ -112,8 +114,6 @@
 
           <% } %>
 
-    
-
           <!-- CART -->
           <a href="/cart" class="cart-link" aria-label="Cart">
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -133,36 +133,5 @@
 
 <main id="main" class="container py-4">
 
-<%
-  // Works whether your flash middleware sets res.locals.success / .error
-  // directly, or res.locals.messages = { success: [...], error: [...] }.
-  // [].concat() means a single string behaves the same as an array.
-  const bag          = locals.messages || locals;
-  const flashSuccess = [].concat(bag.success || []);
-  const flashError   = [].concat(bag.error   || []);
-  const flashInfo    = [].concat(bag.info    || []);
-%>
-
-<% flashSuccess.forEach(function (msg) { %>
-  <div class="flash flash--success">
-    <span class="flash__icon" aria-hidden="true">✓</span>
-    <span class="flash__text"><%= msg %></span>
-    <button type="button" class="flash__close" data-flash-close aria-label="Dismiss">&times;</button>
-  </div>
-<% }) %>
-
-<% flashError.forEach(function (msg) { %>
-  <div class="flash flash--error">
-    <span class="flash__icon" aria-hidden="true">✕</span>
-    <span class="flash__text"><%= msg %></span>
-    <button type="button" class="flash__close" data-flash-close aria-label="Dismiss">&times;</button>
-  </div>
-<% }) %>
-
-<% flashInfo.forEach(function (msg) { %>
-  <div class="flash flash--info">
-    <span class="flash__icon" aria-hidden="true">i</span>
-    <span class="flash__text"><%= msg %></span>
-    <button type="button" class="flash__close" data-flash-close aria-label="Dismiss">&times;</button>
-  </div>
-<% }) %>
+<%# Flash messages queued by req.flash() on the previous request %>
+<%- include('flash') %>

@@ -6,6 +6,7 @@
   --indigo-800: #2B2A8C;
   --indigo-700: #3730A3;
   --indigo-600: #4338CA;
+  --indigo-400: #818CF8;
   --indigo-500: #5B54E8;
   --indigo-300: #A5B4FC;
   --indigo-100: #E0E7FF;
@@ -31,6 +32,7 @@
 
   --r-sm: 8px;
   --r:    12px;
+  --r-md: 14px;
   --r-lg: 18px;
   --r-xl: 28px;
 

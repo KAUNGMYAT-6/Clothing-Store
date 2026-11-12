@@ -8,40 +8,40 @@
     </div>
 
     <div class="surface p-4 p-md-5">
-      <% if (error) { %>
+      <% if (locals.error) { %>
         <div class="flash flash--error mb-3">
           <span class="flash__icon" aria-hidden="true">✕</span>
           <span class="flash__text"><%= error %></span>
         </div>
       <% } %>
 
-      <form method="POST" action="/register" id="registerForm">
+      <form method="POST" action="/register" id="registerForm" data-password-match>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
         <div class="mb-3">
           <label for="name" class="form-label">Full name</label>
           <input id="name" type="text" name="name" class="form-control" required
-                 value="<%= typeof values !== 'undefined' && values.name ? values.name : '' %>">
+                 value="<%= locals.values && values.name ? values.name : '' %>">
         </div>
 
         <div class="mb-3">
           <label for="email" class="form-label">Email</label>
           <input id="email" type="email" name="email" class="form-control" required
-                 value="<%= typeof values !== 'undefined' && values.email ? values.email : '' %>">
+                 value="<%= locals.values && values.email ? values.email : '' %>">
         </div>
 
         <div class="mb-3">
           <label for="password" class="form-label">Password</label>
           <input id="password" type="password" name="password" class="form-control"
-                 minlength="8" required data-pw>
+                 minlength="8" required data-password>
           <div class="form-text">At least 8 characters.</div>
         </div>
 
         <div class="mb-4">
           <label for="confirm_password" class="form-label">Confirm password</label>
           <input id="confirm_password" type="password" name="confirm_password" class="form-control"
-                 minlength="8" required data-pw-confirm>
-          <div class="form-text" data-pw-feedback></div>
+                 minlength="8" required data-password-confirm>
+          <div class="form-text" data-password-hint></div>
         </div>
 
         <button class="btn btn-accent btn-lg w-100">Create account</button>
@@ -53,7 +53,9 @@
         <span style="flex:1; height:1px; background:var(--line)"></span>
       </div>
 
-      <a href="/auth/google" class="btn btn-plain w-100">Continue with Google</a>
+      <a href="/auth/google" class="google-btn" aria-label="Continue with Google">
+        <img src="/img/google-signin.svg" alt="Sign in with Google">
+      </a>
     </div>
 
     <p class="text-center text-mute mt-3" style="font-size:.88rem">

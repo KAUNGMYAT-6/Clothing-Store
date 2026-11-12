@@ -5,7 +5,7 @@ const passport = require('passport');
 const pool = require('../db/pool');
 const { mergeGuestCart } = require('../lib/cart');
 const { createResetToken, hashToken } = require('../lib/tokens');
-const { sendPasswordReset } = require('../lib/email');
+const { sendPasswordReset } = require('../lib/mailer');
 
 const router = express.Router();
 
@@ -17,6 +17,9 @@ const BCRYPT_ROUNDS = 12;
 // Reset requests allowed per account per hour (separate from the
 // per-IP limiter in server.js)
 const RESET_LIMIT_PER_ACCOUNT = 3;
+
+// How long a reset link stays valid
+const RESET_TOKEN_MINUTES = 60;
 
 // ============================================================
 // Shared: start a session, merge the guest cart, redirect
@@ -37,8 +40,7 @@ async function startSession(req, res, user, fallback = '/') {
   // version of this had no inner try/catch, so a merge failure was
   // caught by the route's catch and the user had to log in twice.
   try {
-    // >>> CHECK THIS LINE against your lib/cart.js signature <<<
-    await mergeGuestCart(req, res, user.id);
+    await mergeGuestCart(req, user.id);
   } catch (err) {
     console.error('Cart merge failed (login continues):', err.message);
   }
@@ -63,7 +65,7 @@ async function startSession(req, res, user, fallback = '/') {
 // ============================================================
 router.get('/register', (req, res) => {
   if (req.session.user) return res.redirect('/');
-  res.render('auth/register', { title: 'Create an account', form: {} });
+  res.render('auth/register', { title: 'Create an account', error: null, values: {} });
 });
 
 router.post('/register', async (req, res, next) => {
@@ -75,7 +77,7 @@ router.post('/register', async (req, res, next) => {
     return res.status(400).render('auth/register', {
       title: 'Create an account',
       error: message,
-      form: { name, email }   // keep what they typed, never the password
+      values: { name, email }   // keep what they typed, never the password
     });
   }
 
@@ -120,7 +122,7 @@ router.post('/register', async (req, res, next) => {
 // ============================================================
 router.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/');
-  res.render('auth/login', { title: 'Log in', form: {} });
+  res.render('auth/login', { title: 'Log in', error: null, values: {} });
 });
 
 router.post('/login', async (req, res, next) => {
@@ -139,14 +141,14 @@ router.post('/login', async (req, res, next) => {
 
     if (!user || !user.password_hash) {
       return res.status(401).render('auth/login', {
-        title: 'Log in', error: WRONG, form: { email }
+        title: 'Log in', error: WRONG, values: { email }
       });
     }
 
     const ok = await bcrypt.compare(password || '', user.password_hash);
     if (!ok) {
       return res.status(401).render('auth/login', {
-        title: 'Log in', error: WRONG, form: { email }
+        title: 'Log in', error: WRONG, values: { email }
       });
     }
 
@@ -164,7 +166,8 @@ router.post('/login', async (req, res, next) => {
 // ============================================================
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie('connect.sid');
+    // Must match the `key` given to session() in server.js
+    res.clearCookie('store_sid');
     res.redirect('/');
   });
 });
@@ -175,7 +178,7 @@ router.post('/logout', (req, res) => {
 // session: false — Passport's own session handling is switched
 // off because this app manages req.session.user itself. Letting
 // both run would give two sources of truth.
-// The strategy itself is configured in config/passport.js.
+// The strategy itself is configured in lib/passport.js.
 // ============================================================
 router.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })
@@ -202,7 +205,7 @@ router.get('/auth/google/callback',
 // FORGOT PASSWORD
 // ============================================================
 router.get('/forgot-password', (req, res) => {
-  res.render('auth/forgot-password', { title: 'Reset your password' });
+  res.render('auth/forgot-password', { title: 'Reset your password', error: null });
 });
 
 router.post('/forgot-password', async (req, res, next) => {
@@ -238,19 +241,24 @@ router.post('/forgot-password', async (req, res, next) => {
       return res.redirect('/forgot-password');
     }
 
-    const { token, tokenHash, expiresAt } = createResetToken();
+    // token goes in the email; only its hash goes in the database
+    const { token, hash } = createResetToken();
 
+    // The database works out the expiry, so the app server's clock
+    // and time zone never come into it
     await pool.query(`
       INSERT INTO password_resets (user_id, token_hash, expires_at)
-      VALUES (?, ?, ?)
-    `, [user.id, tokenHash, expiresAt]);
+      VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))
+    `, [user.id, hash, RESET_TOKEN_MINUTES]);
 
-    const link = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password/${token}`;
+    const link = `${process.env.BASE_URL}/reset-password/${token}`;
 
     try {
-      await sendPasswordReset(user.email, user.name, link);
+      // Resend reports most failures in the response instead of throwing
+      const result = await sendPasswordReset(user, link);
+      if (result && result.error) throw new Error(result.error.message);
     } catch (e) {
-      console.error('Reset email failed to send:', e.message);
+      console.error('[EMAIL FAILED] password reset to', user.email, '-', e.message);
     }
 
     req.flash('success', GENERIC);
@@ -289,14 +297,14 @@ router.get('/reset-password/:token', async (req, res, next) => {
     const row = await findValidToken(req.params.token);
 
     if (!row) {
-      return res.status(400).render('auth/reset-invalid', {
-        title: 'Link expired'
-      });
+      req.flash('error', 'That reset link has expired or was already used. Request a new one below.');
+      return res.redirect('/forgot-password');
     }
 
     res.render('auth/reset-password', {
       title: 'Choose a new password',
-      token: req.params.token
+      token: req.params.token,
+      error: null
     });
   } catch (err) {
     next(err);
@@ -310,7 +318,8 @@ router.post('/reset-password/:token', async (req, res, next) => {
     const row = await findValidToken(req.params.token);
 
     if (!row) {
-      return res.status(400).render('auth/reset-invalid', { title: 'Link expired' });
+      req.flash('error', 'That reset link has expired or was already used. Request a new one below.');
+      return res.redirect('/forgot-password');
     }
 
     if (!password || password.length < 8) {
