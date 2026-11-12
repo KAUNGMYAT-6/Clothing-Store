@@ -215,12 +215,14 @@ router.get('/products/new', async (req, res) => {
   }
 });
 
-router.post('/products', async (req, res) => {
+router.post('/products', upload.single('image'), async (req, res) => {
   const { name, slug, description, price, category_id, department } = req.body;
 
+  const connection = await pool.getConnection();
   try {
     if (!name || !slug || !price || !category_id) {
       const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
+      connection.release();
       return res.status(400).render('admin/product-form', {
         title: 'New product',
         active: 'products',
@@ -230,14 +232,40 @@ router.post('/products', async (req, res) => {
       });
     }
 
-    const [result] = await pool.query(`
+    // Upload before the transaction: a slow network call shouldn't hold
+    // a database lock open
+    let imageUrl = null;
+    let cloudinaryId = null;
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      imageUrl = result.secure_url;
+      cloudinaryId = result.public_id;
+    }
+
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(`
       INSERT INTO products (name, slug, description, price, category_id, department)
       VALUES (?, ?, ?, ?, ?, ?)
     `, [name, slug, description || null, price, category_id, department || 'unisex']);
 
-    req.flash('success', `"${name}" created. Add sizes and colours below so it can be bought.`);
-    res.redirect(`/admin/products/${result.insertId}/edit`);
+    const productId = result.insertId;
+
+    // The first image is always the main one
+    if (imageUrl) {
+      await connection.query(`
+        INSERT INTO product_images
+          (product_id, image_url, cloudinary_id, alt_text, sort_order, is_primary)
+        VALUES (?, ?, ?, ?, 0, TRUE)
+      `, [productId, imageUrl, cloudinaryId, name]);
+    }
+
+    await connection.commit();
+
+    req.flash('success', `"${name}" created. Add sizes and colours so it can be bought.`);
+    res.redirect(`/admin/products/${productId}/edit`);
   } catch (err) {
+    await connection.rollback();
     console.error(err);
     const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
     res.status(400).render('admin/product-form', {
@@ -247,8 +275,10 @@ router.post('/products', async (req, res) => {
       categories,
       error: err.code === 'ER_DUP_ENTRY'
         ? 'That slug is already in use. Try a different one.'
-        : 'Could not create the product.'
+        : (err.message || 'Could not create the product.')
     });
+  } finally {
+    connection.release();
   }
 });
 

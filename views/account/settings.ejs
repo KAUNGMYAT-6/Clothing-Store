@@ -1,0 +1,141 @@
+<%- include('../partials/header') %>
+<%- include('partials/nav') %>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+
+    <!-- NAME AND EMAIL -->
+    <div class="surface p-4 mb-3">
+      <div class="panel-title mb-3">Your details</div>
+      <form method="POST" action="/account/settings/profile">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="mb-3">
+          <label for="name" class="form-label">Name</label>
+          <input id="name" type="text" name="name" class="form-control"
+                 value="<%= account.name %>" required minlength="2" maxlength="100">
+        </div>
+
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input id="email" type="email" name="email" class="form-control"
+                 value="<%= account.email %>" required>
+          <div class="form-text">Order confirmations go to this address.</div>
+        </div>
+
+        <button class="btn btn-accent">Save details</button>
+      </form>
+    </div>
+
+    <!-- PASSWORD -->
+    <div class="surface p-4 mb-3">
+      <div class="panel-title mb-3"><%= hasPassword ? 'Change password' : 'Set a password' %></div>
+
+      <% if (!hasPassword) { %>
+        <p class="text-mute mb-3" style="font-size:.88rem">
+          You signed up with Google. Setting a password lets you log in either way.
+        </p>
+      <% } %>
+
+      <form method="POST" action="/account/settings/password"
+            data-password-match>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <% if (hasPassword) { %>
+          <div class="mb-3">
+            <label for="current_password" class="form-label">Current password</label>
+            <input id="current_password" type="password" name="current_password"
+                   class="form-control" required autocomplete="current-password">
+          </div>
+        <% } %>
+
+        <div class="mb-3">
+          <label for="new_password" class="form-label">New password</label>
+          <input id="new_password" type="password" name="new_password" class="form-control"
+                 required minlength="8" autocomplete="new-password" data-password>
+          <div class="form-text">At least 8 characters.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="confirm_password" class="form-label">Confirm new password</label>
+          <input id="confirm_password" type="password" name="confirm_password"
+                 class="form-control" required autocomplete="new-password" data-password-confirm>
+          <div class="form-text" data-password-hint></div>
+        </div>
+
+        <button type="submit" class="btn btn-accent">
+          <%= hasPassword ? 'Change password' : 'Set password' %>
+        </button>
+      </form>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div class="surface p-4 danger-zone">
+      <div class="panel-title mb-2" style="color:var(--danger)">Delete my account</div>
+      <p class="text-mute mb-3" style="font-size:.88rem">
+        This removes your profile, saved addresses and reviews permanently.
+        Past orders are kept for our records but will no longer be linked to you.
+        This cannot be undone.
+      </p>
+
+      <form method="POST" action="/account/delete">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <% if (hasPassword) { %>
+          <div class="mb-3">
+            <label for="del_password" class="form-label">Confirm with your password</label>
+            <input id="del_password" type="password" name="password" class="form-control"
+                   required autocomplete="current-password" style="max-width:280px">
+          </div>
+        <% } else { %>
+          <div class="mb-3">
+            <label for="del_confirm" class="form-label">Type <strong>DELETE</strong> to confirm</label>
+            <input id="del_confirm" type="text" name="confirm" class="form-control"
+                   required pattern="DELETE" style="max-width:280px">
+          </div>
+        <% } %>
+
+        <button class="btn btn-danger-solid">Delete my account</button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- PHOTO -->
+  <div class="col-lg-5">
+    <div class="surface p-4">
+      <div class="panel-title mb-3">Profile photo</div>
+
+      <div class="text-center mb-3">
+        <% if (account.profile_photo_url) { %>
+          <img src="<%= account.profile_photo_url %>" alt="" class="settings-avatar">
+        <% } else { %>
+          <div class="settings-avatar settings-avatar--initial">
+            <%= account.name.trim().charAt(0).toUpperCase() %>
+          </div>
+        <% } %>
+      </div>
+
+      <form method="POST"
+            action="/account/settings/photo?_csrf=<%= encodeURIComponent(csrfToken) %>"
+            enctype="multipart/form-data" data-live-preview>
+        <div class="mb-3">
+          <label for="photo" class="form-label">Upload a new photo</label>
+          <input id="photo" type="file" name="photo" class="form-control"
+                 accept="image/jpeg,image/png,image/webp" required>
+          <div class="form-text">JPEG, PNG or WebP. Max 5 MB. Cropped to a square.</div>
+        </div>
+        <button class="btn btn-accent w-100">Upload photo</button>
+      </form>
+
+      <% if (account.profile_photo_url) { %>
+        <form method="POST" action="/account/settings/photo/delete" class="mt-2">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-plain w-100">Remove photo</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

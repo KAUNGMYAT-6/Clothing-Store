@@ -1,0 +1,21 @@
+<div class="account-head">
+  <div class="d-flex align-items-center gap-3">
+    <% if (user.profile_photo_url) { %>
+      <img src="<%= user.profile_photo_url %>" alt="" class="account-avatar">
+    <% } else { %>
+      <div class="account-avatar account-avatar--initial">
+        <%= user.name.trim().charAt(0).toUpperCase() %>
+      </div>
+    <% } %>
+    <div>
+      <h1 class="mb-1"><%= user.name %></h1>
+      <div class="text-mute" style="font-size:.88rem"><%= user.email %></div>
+    </div>
+  </div>
+</div>
+
+<nav class="account-tabs mb-4">
+  <a href="/account/orders"    class="account-tab <%= active === 'orders'    ? 'is-on' : '' %>">Orders</a>
+  <a href="/account/addresses" class="account-tab <%= active === 'addresses' ? 'is-on' : '' %>">Addresses</a>
+  <a href="/account/settings"  class="account-tab <%= active === 'settings'  ? 'is-on' : '' %>">Settings</a>
+</nav>

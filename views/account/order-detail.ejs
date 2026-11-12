@@ -1,0 +1,122 @@
+<%- include('../partials/header') %>
+
+<div style="font-size:.82rem; color:var(--ink-mute)" class="mb-3">
+  <a href="/account/orders" class="text-mute">My orders</a>
+  <span style="opacity:.5">/</span>
+  <span class="text-soft">Order #<%= order.id %></span>
+</div>
+
+<div class="section-head">
+  <div>
+    <h1 class="mb-2">Order #<%= order.id %></h1>
+    <div class="text-mute" style="font-size:.88rem">
+      Placed <%= new Date(order.created_at).toLocaleDateString('en-SG', { day:'numeric', month:'long', year:'numeric' }) %>
+    </div>
+  </div>
+  <span class="status-pill status-pill--<%= order.status %>">
+    <%= statusLabels[order.status] || order.status %>
+  </span>
+</div>
+
+<!-- PROGRESS -->
+<% if (order.status !== 'cancelled' && order.status !== 'pending') { %>
+  <% const reached = statusFlow.indexOf(order.status); %>
+  <div class="surface p-4 mb-3">
+    <div class="track">
+      <% statusFlow.forEach(function (step, i) { %>
+        <div class="track__step <%= i <= reached ? 'is-done' : '' %>">
+          <span class="track__dot"></span>
+          <span class="track__label"><%= statusLabels[step] %></span>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<% if (order.status === 'pending') { %>
+  <div class="flash flash--info mb-3">
+    <span class="flash__text">
+      We haven't received payment for this order yet. If you just paid, give it a moment and refresh.
+    </span>
+  </div>
+<% } %>
+
+<div class="row g-3">
+
+  <!-- ITEMS -->
+  <div class="col-lg-8">
+    <div class="surface p-4">
+      <div class="panel-title mb-3">Items</div>
+
+      <% items.forEach(function (item) { %>
+        <div class="order-item">
+          <img class="order-item__thumb"
+               src="<%= item.image_url || 'https://placehold.co/160x200/EEF2FF/8785A8?text=DENISE' %>" alt="">
+          <div style="flex:1; min-width:0">
+            <% if (item.product_slug) { %>
+              <a href="/products/<%= item.product_slug %>" class="fw-semibold text-decoration-none d-block mb-1">
+                <%= item.product_name %>
+              </a>
+            <% } else { %>
+              <div class="fw-semibold mb-1"><%= item.product_name %></div>
+              <div class="text-mute" style="font-size:.76rem">No longer sold</div>
+            <% } %>
+            <div class="text-mute" style="font-size:.82rem">
+              <%= item.color %> · Size <%= item.size %> · Qty <%= item.quantity %>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="font-display fw-semibold">
+              $<%= (Number(item.unit_price) * Number(item.quantity)).toFixed(2) %>
+            </div>
+            <% if (Number(item.quantity) > 1) { %>
+              <div class="text-mute" style="font-size:.76rem">
+                $<%= Number(item.unit_price).toFixed(2) %> each
+              </div>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="col-lg-4">
+    <div class="surface p-4 mb-3">
+      <div class="panel-title mb-3">Summary</div>
+      <%
+        const total = Number(order.total_amount);
+        const shipping = order.shipping_fee != null ? Number(order.shipping_fee) : 5;
+        const subtotal = total - shipping;
+      %>
+      <div class="d-flex justify-content-between mb-2" style="font-size:.9rem">
+        <span class="text-mute">Subtotal</span><span>$<%= subtotal.toFixed(2) %></span>
+      </div>
+      <div class="d-flex justify-content-between mb-3" style="font-size:.9rem">
+        <span class="text-mute">Delivery</span><span>$<%= shipping.toFixed(2) %></span>
+      </div>
+      <div class="d-flex justify-content-between pt-3" style="border-top:1px solid var(--line)">
+        <strong class="font-display">Total</strong>
+        <strong class="font-display">$<%= total.toFixed(2) %></strong>
+      </div>
+    </div>
+
+    <% if (order.shipping_line1 || order.shipping_address) { %>
+      <div class="surface p-4">
+        <div class="panel-title mb-3">Delivering to</div>
+        <address class="mb-0 text-soft" style="font-size:.88rem; line-height:1.7">
+          <% if (order.shipping_name) { %><%= order.shipping_name %><br><% } %>
+          <% if (order.shipping_address) { %>
+            <%= order.shipping_address %>
+          <% } else { %>
+            <%= order.shipping_line1 %><br>
+            <% if (order.shipping_line2) { %><%= order.shipping_line2 %><br><% } %>
+            <%= order.shipping_city %> <%= order.shipping_postal_code %>
+          <% } %>
+        </address>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

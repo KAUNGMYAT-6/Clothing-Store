@@ -20,6 +20,7 @@ const authRoutes = require('./routes/auth');
 const cartRoutes = require('./routes/cart');
 const checkoutRoutes = require('./routes/checkout');
 const adminRoutes = require('./routes/admin');
+const accountRoutes = require('./routes/account');
 
 // ---------- App setup ----------
 const app = express();
@@ -84,6 +85,7 @@ app.use((req, res, next) => {
   res.locals.cartCount = 0;
   res.locals.navCategories = [];
   res.locals.csrfToken = '';
+  res.locals.path = req.path;
   next();
 });
 
@@ -161,6 +163,7 @@ app.use('/', productRoutes);
 app.use('/', authRoutes);
 app.use('/', cartRoutes);
 app.use('/', checkoutRoutes);
+app.use('/account', accountRoutes);
 
 // ---------- 404: nothing above matched ----------
 app.use((req, res) => {

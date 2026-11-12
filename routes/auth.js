@@ -1,341 +1,364 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const passport = require('passport');
+
 const pool = require('../db/pool');
-const passport = require('../lib/passport');
-const { requireLogin } = require('../middleware/auth');
 const { mergeGuestCart } = require('../lib/cart');
 const { createResetToken, hashToken } = require('../lib/tokens');
-const { sendPasswordReset } = require('../lib/mailer');
+const { sendPasswordReset } = require('../lib/email');
 
 const router = express.Router();
 
-// Shared by both password and Google login
-async function completeLogin(req, res, user) {
+// bcrypt work factor. 12 is slow on purpose — roughly a quarter
+// of a second per hash. Users don't notice; someone brute-forcing
+// a stolen database very much does.
+const BCRYPT_ROUNDS = 12;
+
+// Reset requests allowed per account per hour (separate from the
+// per-IP limiter in server.js)
+const RESET_LIMIT_PER_ACCOUNT = 3;
+
+// ============================================================
+// Shared: start a session, merge the guest cart, redirect
+// ------------------------------------------------------------
+// Used by register, login and the Google callback so all three
+// behave identically.
+// ============================================================
+async function startSession(req, res, user, fallback = '/') {
   req.session.user = {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role || 'user'
+    role: user.role,
+    profile_photo_url: user.profile_photo_url || null
   };
 
+  // Cart merging must not be able to break logging in. The first
+  // version of this had no inner try/catch, so a merge failure was
+  // caught by the route's catch and the user had to log in twice.
   try {
-    await mergeGuestCart(req, user.id);
-  } catch (mergeErr) {
-    console.error('Cart merge failed:', mergeErr);
+    // >>> CHECK THIS LINE against your lib/cart.js signature <<<
+    await mergeGuestCart(req, res, user.id);
+  } catch (err) {
+    console.error('Cart merge failed (login continues):', err.message);
   }
 
-  const returnTo = req.session.returnTo || '/';
+  // Where they were headed before being bounced to login
+  const target = req.session.returnTo || fallback;
   delete req.session.returnTo;
 
-  req.flash('success', `Welcome back, ${user.name.split(' ')[0]}.`);
-
-  // Wait for the session write before redirecting, so the next request
-  // definitely sees the logged-in user
-  req.session.save((err) => {
-    if (err) {
-      console.error('Session save failed:', err);
-      return res.redirect('/login');
-    }
-    res.redirect(returnTo);
+  // Writing the session is async. Redirecting without waiting is a
+  // race: the next request can arrive before the write lands, and
+  // the page renders as if logged out.
+  return new Promise((resolve) => {
+    req.session.save(() => {
+      res.redirect(target);
+      resolve();
+    });
   });
 }
 
 // ============================================================
-// Registration
+// REGISTER
 // ============================================================
 router.get('/register', (req, res) => {
-  res.render('auth/register', { title: 'Create account', error: null, values: {} });
+  if (req.session.user) return res.redirect('/');
+  res.render('auth/register', { title: 'Create an account', form: {} });
 });
 
-router.post('/register', async (req, res) => {
-  const { name, email, password, confirm_password } = req.body;
-  const values = { name, email };
+router.post('/register', async (req, res, next) => {
+  const name = (req.body.name || '').trim();
+  const email = (req.body.email || '').trim().toLowerCase();
+  const { password, confirm_password } = req.body;
+
+  function fail(message) {
+    return res.status(400).render('auth/register', {
+      title: 'Create an account',
+      error: message,
+      form: { name, email }   // keep what they typed, never the password
+    });
+  }
 
   try {
-    if (!name || !email || !password) {
-      return res.status(400).render('auth/register', {
-        title: 'Create account', values,
-        error: 'Please fill in all fields.'
-      });
+    if (name.length < 2 || name.length > 100) {
+      return fail('Your name needs to be between 2 and 100 characters.');
     }
-
-    if (password.length < 8) {
-      return res.status(400).render('auth/register', {
-        title: 'Create account', values,
-        error: 'Your password needs at least 8 characters.'
-      });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return fail("That doesn't look like an email address.");
     }
-
-    // Checked here as well as in the browser: client-side validation
-    // is a convenience, never a guarantee
+    if (!password || password.length < 8) {
+      return fail('Your password must be at least 8 characters.');
+    }
     if (password !== confirm_password) {
-      return res.status(400).render('auth/register', {
-        title: 'Create account', values,
-        error: 'Those passwords do not match.'
-      });
+      return fail('The two passwords do not match.');
     }
 
-    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing.length) {
-      return res.status(400).render('auth/register', {
-        title: 'Create account', values,
-        error: 'An account with that email already exists. Try logging in instead.'
-      });
+    const [[existing]] = await pool.query(
+      'SELECT id FROM users WHERE email = ?', [email]
+    );
+    if (existing) {
+      return fail('That email is already registered. Try logging in instead.');
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-    await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-      [name, email, passwordHash]
+    const [result] = await pool.query(
+      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+      [name, email, hash, 'user']
     );
 
-    req.flash('success', 'Account created. You can log in now.');
-    res.redirect('/login');
-  } catch (err) {
-    console.error(err);
-    res.status(500).render('auth/register', {
-      title: 'Create account', values,
-      error: 'Something went wrong. Please try again.'
+    await startSession(req, res, {
+      id: result.insertId, name, email, role: 'user', profile_photo_url: null
     });
+  } catch (err) {
+    next(err);
   }
 });
 
 // ============================================================
-// Login
+// LOGIN
 // ============================================================
 router.get('/login', (req, res) => {
-  res.render('auth/login', { title: 'Log in', error: null });
+  if (req.session.user) return res.redirect('/');
+  res.render('auth/login', { title: 'Log in', form: {} });
 });
 
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+router.post('/login', async (req, res, next) => {
+  const email = (req.body.email || '').trim().toLowerCase();
+  const { password } = req.body;
 
   try {
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    const user = users[0];
+    const [[user]] = await pool.query(
+      'SELECT * FROM users WHERE email = ?', [email]
+    );
 
-    // Same message for both failures, so the form can't be used to
-    // discover which emails have accounts.
-    // !user.password_hash covers Google-only accounts.
+    // One message for both "no such email" and "wrong password".
+    // Telling them which is wrong confirms whether an address is
+    // registered here, which is a privacy leak.
+    const WRONG = 'Email or password is incorrect.';
+
     if (!user || !user.password_hash) {
       return res.status(401).render('auth/login', {
-        title: 'Log in',
-        error: 'That email and password don\'t match an account.'
+        title: 'Log in', error: WRONG, form: { email }
       });
     }
 
-    const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) {
+    const ok = await bcrypt.compare(password || '', user.password_hash);
+    if (!ok) {
       return res.status(401).render('auth/login', {
-        title: 'Log in',
-        error: 'That email and password don\'t match an account.'
+        title: 'Log in', error: WRONG, form: { email }
       });
     }
 
-    await completeLogin(req, res, user);
+    await startSession(req, res, user);
   } catch (err) {
-    console.error(err);
-    res.status(500).render('auth/login', {
-      title: 'Log in',
-      error: 'Something went wrong. Please try again.'
-    });
+    next(err);
   }
 });
 
 // ============================================================
-// Google OAuth
+// LOGOUT
+// ------------------------------------------------------------
+// POST, not GET. A GET logout can be fired by any <img> tag on
+// any site, and CSRF protection doesn't apply to GET.
+// ============================================================
+router.post('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie('connect.sid');
+    res.redirect('/');
+  });
+});
+
+// ============================================================
+// GOOGLE OAUTH
+// ------------------------------------------------------------
+// session: false — Passport's own session handling is switched
+// off because this app manages req.session.user itself. Letting
+// both run would give two sources of truth.
+// The strategy itself is configured in config/passport.js.
 // ============================================================
 router.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
 
 router.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login', session: false }),
-  async (req, res) => {
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: '/login'
+  }),
+  async (req, res, next) => {
     try {
-      await completeLogin(req, res, req.user);
+      // req.user comes from the strategy's verify callback, which
+      // links by email: an existing account with the same address
+      // gets the Google id attached rather than a duplicate created
+      await startSession(req, res, req.user);
     } catch (err) {
-      console.error(err);
-      req.flash('error', 'We could not sign you in with Google. Please try again.');
-      res.redirect('/login');
+      next(err);
     }
   }
 );
 
 // ============================================================
-// Password reset
+// FORGOT PASSWORD
 // ============================================================
 router.get('/forgot-password', (req, res) => {
-  res.render('auth/forgot-password', { title: 'Reset password', error: null });
+  res.render('auth/forgot-password', { title: 'Reset your password' });
 });
 
-router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
+router.post('/forgot-password', async (req, res, next) => {
+  const email = (req.body.email || '').trim().toLowerCase();
 
-  // Identical response on every path below, so this form can't be used
-  // to discover which emails have accounts
-  const sameAnswer = () => {
-    req.flash('info',
-      'If an account exists for that email, a reset link is on its way. Check your inbox.');
-    res.redirect('/login');
-  };
+  // Deliberately identical whether or not the address exists
+  const GENERIC = 'If that email is registered, a reset link is on its way.';
 
   try {
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    const user = users[0];
+    const [[user]] = await pool.query(
+      'SELECT id, name, email FROM users WHERE email = ?', [email]
+    );
 
-    if (!user) return sameAnswer();
+    if (!user) {
+      req.flash('success', GENERIC);
+      return res.redirect('/forgot-password');
+    }
 
     // Per-account limit, on top of the per-IP limiter in server.js.
-    // IP limits alone don't stop a distributed attack on one inbox.
-    const [[recent]] = await pool.query(`
-      SELECT COUNT(*) AS n FROM password_resets
+    // IP limiting alone doesn't stop someone hammering one account
+    // from a botnet; account limiting alone doesn't stop someone
+    // walking a list of addresses from one machine. You need both.
+    const [[{ recent }]] = await pool.query(`
+      SELECT COUNT(*) AS recent
+      FROM password_resets
       WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
     `, [user.id]);
 
-    if (recent.n >= 3) return sameAnswer();
+    if (recent >= RESET_LIMIT_PER_ACCOUNT) {
+      req.flash('error',
+        'Too many reset requests for this account. Please wait an hour and try again, ' +
+        'or check your inbox and spam folder for a link we already sent.');
+      return res.redirect('/forgot-password');
+    }
 
-    const { token, hash } = createResetToken();
+    const { token, tokenHash, expiresAt } = createResetToken();
 
     await pool.query(`
       INSERT INTO password_resets (user_id, token_hash, expires_at)
-      VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))
-    `, [user.id, hash]);
+      VALUES (?, ?, ?)
+    `, [user.id, tokenHash, expiresAt]);
 
-    const resetUrl = `${process.env.BASE_URL}/reset-password/${token}`;
+    const link = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password/${token}`;
 
     try {
-      await sendPasswordReset(user, resetUrl);
-    } catch (mailErr) {
-      console.error('Reset email failed:', mailErr);
+      await sendPasswordReset(user.email, user.name, link);
+    } catch (e) {
+      console.error('Reset email failed to send:', e.message);
     }
 
-    sameAnswer();
+    req.flash('success', GENERIC);
+    res.redirect('/forgot-password');
   } catch (err) {
-    console.error(err);
-    res.status(500).render('auth/forgot-password', {
-      title: 'Reset password',
-      error: 'Something went wrong. Please try again.'
-    });
+    next(err);
   }
 });
 
-router.get('/reset-password/:token', async (req, res) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT * FROM password_resets
-      WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()
-    `, [hashToken(req.params.token)]);
+// ============================================================
+// RESET PASSWORD
+// ------------------------------------------------------------
+// The database stores a SHA-256 hash of the token, never the token.
+// If the database leaks, the hashes are useless for logging in.
+//
+// SHA-256 here, bcrypt for passwords — that difference is on
+// purpose. bcrypt is slow to defend weak, guessable passwords.
+// A 32-byte random token has nothing to guess, so slow hashing
+// buys nothing and only makes every reset click sluggish.
+// ============================================================
+async function findValidToken(rawToken) {
+  const [[row]] = await pool.query(`
+    SELECT pr.*, u.id AS uid, u.name, u.email, u.role, u.profile_photo_url
+    FROM password_resets pr
+    JOIN users u ON u.id = pr.user_id
+    WHERE pr.token_hash = ?
+      AND pr.used_at IS NULL
+      AND pr.expires_at > NOW()
+  `, [hashToken(rawToken)]);
 
-    if (rows.length === 0) {
-      req.flash('error', 'That reset link has expired or already been used. Request a new one.');
-      return res.redirect('/forgot-password');
+  return row || null;
+}
+
+router.get('/reset-password/:token', async (req, res, next) => {
+  try {
+    const row = await findValidToken(req.params.token);
+
+    if (!row) {
+      return res.status(400).render('auth/reset-invalid', {
+        title: 'Link expired'
+      });
     }
 
     res.render('auth/reset-password', {
       title: 'Choose a new password',
-      token: req.params.token,
-      error: null
+      token: req.params.token
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).render('errors/500', { title: 'Something went wrong' });
+    next(err);
   }
 });
 
-router.post('/reset-password/:token', async (req, res) => {
+router.post('/reset-password/:token', async (req, res, next) => {
   const { password, confirm_password } = req.body;
-  const token = req.params.token;
 
-  const connection = await pool.getConnection();
   try {
+    const row = await findValidToken(req.params.token);
+
+    if (!row) {
+      return res.status(400).render('auth/reset-invalid', { title: 'Link expired' });
+    }
+
     if (!password || password.length < 8) {
       return res.status(400).render('auth/reset-password', {
-        title: 'Choose a new password', token,
-        error: 'Your password needs at least 8 characters.'
+        title: 'Choose a new password',
+        token: req.params.token,
+        error: 'Your password must be at least 8 characters.'
       });
     }
 
     if (password !== confirm_password) {
       return res.status(400).render('auth/reset-password', {
-        title: 'Choose a new password', token,
-        error: 'Those passwords do not match.'
+        title: 'Choose a new password',
+        token: req.params.token,
+        error: 'The two passwords do not match.'
       });
     }
 
-    await connection.beginTransaction();
+    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-    // Lock the row so the same token can't be redeemed twice at once
-    const [rows] = await connection.query(`
-      SELECT * FROM password_resets
-      WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()
-      FOR UPDATE
-    `, [hashToken(token)]);
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
 
-    if (rows.length === 0) {
+      await connection.query(
+        'UPDATE users SET password_hash = ? WHERE id = ?', [hash, row.uid]
+      );
+
+      // Burn this token and every other outstanding one for the
+      // account. If someone requested three resets, the other two
+      // links must stop working the moment one is used.
+      await connection.query(
+        'UPDATE password_resets SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL',
+        [row.uid]
+      );
+
       await connection.commit();
-      req.flash('error', 'That reset link has expired or already been used.');
-      return res.redirect('/forgot-password');
+    } catch (e) {
+      await connection.rollback();
+      throw e;
+    } finally {
+      connection.release();
     }
 
-    const reset = rows[0];
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    await connection.query(
-      'UPDATE users SET password_hash = ? WHERE id = ?',
-      [passwordHash, reset.user_id]
-    );
-
-    // Mark this token used, and void any other outstanding ones
-    await connection.query(`
-      UPDATE password_resets SET used_at = NOW()
-      WHERE user_id = ? AND used_at IS NULL
-    `, [reset.user_id]);
-
-    await connection.commit();
-
-    req.flash('success', 'Password changed. You can log in now.');
+    req.flash('success', 'Password updated. You can log in now.');
     res.redirect('/login');
   } catch (err) {
-    await connection.rollback();
-    console.error(err);
-    res.status(500).render('auth/reset-password', {
-      title: 'Choose a new password', token,
-      error: 'Something went wrong. Please try again.'
-    });
-  } finally {
-    connection.release();
-  }
-});
-
-// ============================================================
-// Logout
-// ============================================================
-router.post('/logout', (req, res) => {
-  // No flash here: destroy() wipes the session the flash would live in
-  req.session.destroy(() => res.redirect('/'));
-});
-
-// ============================================================
-// Account
-// ============================================================
-router.get('/account', requireLogin, async (req, res) => {
-  try {
-    const [orders] = await pool.query(`
-      SELECT o.id, o.status, o.total, o.created_at,
-             COUNT(oi.id) AS item_count
-      FROM orders o
-      LEFT JOIN order_items oi ON oi.order_id = o.id
-      WHERE o.user_id = ?
-      GROUP BY o.id
-      ORDER BY o.created_at DESC
-    `, [req.session.user.id]);
-
-    res.render('account', { title: 'My account', orders });
-  } catch (err) {
-    console.error(err);
-    res.status(500).render('errors/500', { title: 'Something went wrong' });
+    next(err);
   }
 });
 

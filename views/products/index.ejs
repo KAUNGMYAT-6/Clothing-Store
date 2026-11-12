@@ -89,9 +89,30 @@
 <% if (products.length === 0) { %>
 
   <div class="empty-state">
-    <h3 class="h5 mb-2">No matches</h3>
-    <p class="text-mute mb-3">Nothing fits those filters. Try widening your search.</p>
-    <a href="/shop" class="btn btn-soft">Clear filters</a>
+    <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none"
+         stroke="var(--indigo-300)" stroke-width="1.6" stroke-linecap="round" class="mb-3">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+    </svg>
+
+    <% if (filters.q) { %>
+      <h3 class="h5 mb-2">No results for &ldquo;<%= filters.q %>&rdquo;</h3>
+      <p class="text-mute mb-3" style="max-width:40ch; margin-inline:auto">
+        We don't sell anything matching that. Check the spelling, try a shorter
+        word, or browse by category instead.
+      </p>
+    <% } else { %>
+      <h3 class="h5 mb-2">Nothing fits those filters</h3>
+      <p class="text-mute mb-3">Try widening your search.</p>
+    <% } %>
+
+    <div class="d-flex gap-2 justify-content-center flex-wrap">
+      <a href="/shop" class="btn btn-accent">Clear filters</a>
+      <% if (categories.length) { %>
+        <a href="/shop?category=<%= categories[0].id %>" class="btn btn-soft">
+          Browse <%= categories[0].name %>
+        </a>
+      <% } %>
+    </div>
   </div>
 
 <% } else { %>

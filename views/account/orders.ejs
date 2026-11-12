@@ -1,0 +1,53 @@
+<%- include('../partials/header') %>
+<%- include('partials/nav') %>
+
+<% if (orders.length === 0) { %>
+
+  <div class="empty-state">
+    <h3 class="h5 mb-2">No orders yet</h3>
+    <p class="text-mute mb-3">When you buy something it'll show up here.</p>
+    <a href="/shop" class="btn btn-accent">Start shopping</a>
+  </div>
+
+<% } else { %>
+
+  <div class="d-flex flex-column gap-3">
+    <% orders.forEach(function (order) { %>
+      <a href="/account/orders/<%= order.id %>" class="order-row">
+        <img class="order-row__thumb"
+             src="<%= order.thumb || 'https://placehold.co/160x200/EEF2FF/8785A8?text=DENISE' %>" alt="">
+
+        <div class="order-row__main">
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <strong class="font-display">Order #<%= order.id %></strong>
+            <span class="status-pill status-pill--<%= order.status %>">
+              <%= statusLabels[order.status] || order.status %>
+            </span>
+          </div>
+          <div class="text-mute" style="font-size:.84rem">
+            <%= new Date(order.created_at).toLocaleDateString('en-SG', { day:'numeric', month:'long', year:'numeric' }) %>
+            · <%= order.unit_count %> item<%= Number(order.unit_count) === 1 ? '' : 's' %>
+          </div>
+        </div>
+
+        <div class="order-row__total">
+          <div class="font-display fw-bold">$<%= Number(order.total_amount).toFixed(2) %></div>
+          <div class="text-mute" style="font-size:.78rem">View details →</div>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+
+  <% if (pagination.totalPages > 1) { %>
+    <nav class="d-flex justify-content-center align-items-center gap-2 mt-4" aria-label="Pages">
+      <% for (let n = 1; n <= pagination.totalPages; n++) { %>
+        <a href="/account/orders?page=<%= n %>"
+           class="pagedot <%= n === pagination.currentPage ? 'is-on' : '' %>"
+           <%= n === pagination.currentPage ? 'aria-current="page"' : '' %>><%= n %></a>
+      <% } %>
+    </nav>
+  <% } %>
+
+<% } %>
+
+<%- include('../partials/footer') %>
