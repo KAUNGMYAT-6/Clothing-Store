@@ -289,4 +289,61 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+
+  // ============================================================
+  // 9. Size and stock rows (admin new-product form)
+  // ------------------------------------------------------------
+  // Three rows are always there, so the form works without
+  // JavaScript. This adds "Add another row" and the remove
+  // buttons, and keeps a running total in the preview card.
+  // ============================================================
+  const variantRows = document.querySelector('[data-variant-rows]');
+  const variantTemplate = document.querySelector('[data-variant-template]');
+
+  if (variantRows && variantTemplate) {
+    const stockPreview = document.querySelector('[data-preview-stock]');
+
+    // The add/remove buttons only work with JS, so they start hidden
+    document.querySelectorAll('[data-js-only]').forEach(function (el) { el.hidden = false; });
+
+    function updateStockPreview() {
+      if (!stockPreview) return;
+      let sizes = 0;
+      let stock = 0;
+      variantRows.querySelectorAll('[data-variant-row]').forEach(function (row) {
+        const colour = row.querySelector('[name="variant_color"]').value.trim();
+        const size = row.querySelector('[name="variant_size"]').value.trim();
+        if (!colour || !size) return;
+        sizes += 1;
+        stock += Math.max(0, parseInt(row.querySelector('[name="variant_stock"]').value, 10) || 0);
+      });
+      stockPreview.textContent = sizes
+        ? sizes + ' variant' + (sizes === 1 ? '' : 's') + ' · ' + stock + ' in stock'
+        : 'No sizes yet';
+    }
+
+    document.querySelector('[data-add-variant-row]').addEventListener('click', function () {
+      const row = variantTemplate.content.firstElementChild.cloneNode(true);
+      row.querySelectorAll('[data-js-only]').forEach(function (el) { el.hidden = false; });
+      variantRows.appendChild(row);
+      row.querySelector('input').focus();
+    });
+
+    // One listener for every row, including rows added later
+    variantRows.addEventListener('click', function (e) {
+      const button = e.target.closest('[data-remove-variant-row]');
+      if (!button) return;
+      const row = button.closest('[data-variant-row]');
+      if (variantRows.querySelectorAll('[data-variant-row]').length > 1) {
+        row.remove();
+      } else {
+        row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+      }
+      updateStockPreview();
+    });
+
+    variantRows.addEventListener('input', updateStockPreview);
+    updateStockPreview();
+  }
+
 });

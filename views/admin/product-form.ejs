@@ -65,6 +65,40 @@
           </div>
         </div>
 
+        <!-- SIZES AND STOCK -->
+        <div class="mb-4 pt-3" style="border-top:1px solid var(--line-soft)">
+          <div class="d-flex justify-content-between align-items-baseline flex-wrap gap-1 mb-2">
+            <span class="form-label mb-0">Sizes and stock</span>
+            <span class="text-mute" style="font-size:.76rem">Empty rows are ignored</span>
+          </div>
+
+          <div class="variant-rows" data-variant-rows>
+            <div class="variant-row variant-row--head" aria-hidden="true">
+              <span>Colour</span><span>Size</span><span>Stock</span><span></span>
+            </div>
+            <% variantRows.forEach(function (row) { %>
+              <%- include('partials/variant-row', { row: row }) %>
+            <% }) %>
+          </div>
+
+          <%# Copied by app.js when "Add another row" is clicked %>
+          <template data-variant-template>
+            <%- include('partials/variant-row', { row: { color: '', size: '', stock: '' } }) %>
+          </template>
+
+          <button type="button" class="btn btn-sm btn-soft mt-2" data-add-variant-row data-js-only hidden>
+            + Add another row
+          </button>
+          <div class="form-text">SKUs are created for you. You can add more sizes later on the edit page.</div>
+
+          <datalist id="size-suggestions">
+            <% sizeSuggestions.forEach(function (s) { %><option value="<%= s %>"><% }) %>
+          </datalist>
+          <datalist id="colour-suggestions">
+            <% colourSuggestions.forEach(function (c) { %><option value="<%= c %>"><% }) %>
+          </datalist>
+        </div>
+
         <div class="mb-4 pt-3" style="border-top:1px solid var(--line-soft)">
           <label for="image" class="form-label">Main image</label>
           <input id="image" type="file" name="image" class="form-control"
@@ -94,6 +128,7 @@
             <div class="product-card__name" data-preview-name>Product name</div>
             <div class="product-card__meta" data-preview-department>unisex</div>
             <div class="product-card__price" data-preview-price>$0.00</div>
+            <div class="text-mute mt-1" style="font-size:.76rem" data-preview-stock>No sizes yet</div>
           </div>
         </div>
       </div>

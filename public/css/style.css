@@ -991,3 +991,22 @@ a:hover { color: var(--orange-500); }
 }
 .address-option__body { display: flex; flex-direction: column; min-width: 0; }
 .address-option input:focus-visible { outline: 3px solid var(--indigo-300); outline-offset: 2px; }
+
+/* ============================================================
+   Admin: size and stock rows on the new-product form
+   ============================================================ */
+.variant-rows { display: flex; flex-direction: column; gap: .45rem; }
+.variant-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, .8fr) 34px;
+  gap: .5rem;
+  align-items: center;
+}
+.variant-row--head span {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+

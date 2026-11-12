@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
 const { upload, uploadToCloudinary, deleteFromCloudinary } = require('../lib/upload');
+const { SIZE_SUGGESTIONS, readVariant, sameVariant, insertVariant } = require('../lib/variants');
 
 const router = express.Router();
 
@@ -205,16 +206,75 @@ router.get('/products', async (req, res) => {
   }
 });
 
+// ============================================================
+// New product
+// ============================================================
+
+// Colours already used in the shop, offered as suggestions so the
+// same colour gets the same spelling everywhere
+async function colourSuggestions() {
+  const [rows] = await pool.query(
+    'SELECT DISTINCT color FROM product_variants ORDER BY color LIMIT 60'
+  );
+  return rows.map(r => r.color);
+}
+
+async function renderNewProduct(res, { status = 200, product = null, error = null, rows = [] }) {
+  const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
+
+  // Always offer at least three rows to fill in
+  const variantRows = rows.slice();
+  while (variantRows.length < 3) variantRows.push({ color: '', size: '', stock: '' });
+
+  res.status(status).render('admin/product-form', {
+    title: 'New product',
+    active: 'products',
+    product,
+    categories,
+    error,
+    variantRows,
+    sizeSuggestions: SIZE_SUGGESTIONS,
+    colourSuggestions: await colourSuggestions()
+  });
+}
+
+// ------------------------------------------------------------
+// Read the size/colour/stock rows from the new-product form.
+// Each row arrives as three repeated fields; one row arrives as
+// plain strings and several as arrays, so [].concat() evens that out.
+// Completely empty rows are skipped.
+// ------------------------------------------------------------
+function readVariantRows(body) {
+  const colours = [].concat(body.variant_color ?? []);
+  const sizes   = [].concat(body.variant_size ?? []);
+  const stocks  = [].concat(body.variant_stock ?? []);
+  const count = Math.max(colours.length, sizes.length, stocks.length);
+
+  const rows = [];       // exactly what was typed, to refill the form
+  const variants = [];   // cleaned and checked, to save
+
+  for (let i = 0; i < count; i++) {
+    const raw = { color: colours[i] || '', size: sizes[i] || '', stock: stocks[i] || '' };
+    rows.push(raw);
+
+    const blank = !raw.color.trim() && !raw.size.trim() && (raw.stock.trim() === '' || raw.stock.trim() === '0');
+    if (blank) continue;
+
+    const { values, error } = readVariant(raw);
+    if (error) return { rows, variants, error: `Row ${i + 1}: ${error}` };
+
+    if (variants.some(v => sameVariant(v, values))) {
+      return { rows, variants, error: `${values.color} · ${values.size} is listed twice.` };
+    }
+    variants.push(values);
+  }
+
+  return { rows, variants, error: null };
+}
+
 router.get('/products/new', async (req, res) => {
   try {
-    const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
-    res.render('admin/product-form', {
-      title: 'New product',
-      active: 'products',
-      product: null,
-      categories,
-      error: null
-    });
+    await renderNewProduct(res, {});
   } catch (err) {
     console.error(err);
     res.status(500).render('errors/500', { title: 'Something went wrong' });
@@ -224,22 +284,21 @@ router.get('/products/new', async (req, res) => {
 router.post('/products', upload.single('image'), async (req, res) => {
   const { name, slug, description, price, category_id, department } = req.body;
 
-  // Validate BEFORE borrowing a connection. The old version took one
-  // first, released it here, and then released it again in `finally`.
+  // Check everything BEFORE uploading an image or borrowing a connection
+  const { rows, variants, error: variantError } = readVariantRows(req.body);
+
   if (!name || !slug || !price || !category_id) {
-    const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
-    return res.status(400).render('admin/product-form', {
-      title: 'New product',
-      active: 'products',
-      product: req.body,
-      categories,
+    return renderNewProduct(res, {
+      status: 400, product: req.body, rows,
       error: 'Name, slug, price and category are all required.'
     });
+  }
+  if (variantError) {
+    return renderNewProduct(res, { status: 400, product: req.body, rows, error: variantError });
   }
 
   const connection = await pool.getConnection();
   try {
-
     // Upload before the transaction: a slow network call shouldn't hold
     // a database lock open
     let imageUrl = null;
@@ -250,6 +309,7 @@ router.post('/products', upload.single('image'), async (req, res) => {
       cloudinaryId = result.public_id;
     }
 
+    // Product, image and every variant go in together or not at all
     await connection.beginTransaction();
 
     const [result] = await connection.query(`
@@ -268,22 +328,25 @@ router.post('/products', upload.single('image'), async (req, res) => {
       `, [productId, imageUrl, cloudinaryId, name]);
     }
 
+    for (const v of variants) {
+      await insertVariant(connection, productId, v);
+    }
+
     await connection.commit();
 
-    req.flash('success', `"${name}" created. Add sizes and colours so it can be bought.`);
+    const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
+    req.flash('success', variants.length
+      ? `"${name}" created with ${variants.length} variant${variants.length === 1 ? '' : 's'} (${totalStock} in stock).`
+      : `"${name}" created. Add sizes and colours so it can be bought.`);
     res.redirect(`/admin/products/${productId}/edit`);
   } catch (err) {
     await connection.rollback();
     console.error(err);
-    const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
-    res.status(400).render('admin/product-form', {
-      title: 'New product',
-      active: 'products',
-      product: req.body,
-      categories,
+    await renderNewProduct(res, {
+      status: 400, product: req.body, rows,
       error: err.code === 'ER_DUP_ENTRY'
         ? 'That slug is already in use. Try a different one.'
-        : (err.message || 'Could not create the product.')
+        : 'Could not create the product. Check the details and try again.'
     });
   } finally {
     connection.release();
@@ -298,10 +361,13 @@ router.get('/products/:id/edit', async (req, res) => {
     }
 
     const [categories] = await pool.query('SELECT id, name FROM categories ORDER BY name');
-    const [variants] = await pool.query(
-      'SELECT * FROM product_variants WHERE product_id = ? ORDER BY color, size',
-      [product.id]
-    );
+    // FIELD() puts letter sizes in wearing order (XS before S before M).
+    // Sizes not in the list get 0 and go last, then sort normally.
+    const [variants] = await pool.query(`
+      SELECT * FROM product_variants
+      WHERE product_id = ?
+      ORDER BY color, FIELD(size, 'XXL', 'XL', 'L', 'M', 'S', 'XS') DESC, size
+    `, [product.id]);
     const [images] = await pool.query(
       `SELECT * FROM product_images
        WHERE product_id = ?
@@ -319,7 +385,9 @@ router.get('/products/:id/edit', async (req, res) => {
     res.render('admin/product-edit', {
       title: `Edit ${product.name}`,
       active: 'products',
-      product, categories, variants, images, reviews, error: null
+      product, categories, variants, images, reviews, error: null,
+      sizeSuggestions: SIZE_SUGGESTIONS,
+      colourSuggestions: await colourSuggestions()
     });
   } catch (err) {
     console.error(err);
@@ -357,28 +425,63 @@ router.post('/products/:id', async (req, res) => {
 // Variants
 // ============================================================
 router.post('/products/:id/variants', async (req, res) => {
-  const { size, color, sku, stock_quantity } = req.body;
-  const productId = req.params.id;
+  const productId = Number(req.params.id);
+  const back = `/admin/products/${productId}/edit`;
 
   try {
-    if (!size || !color || !sku) {
-      req.flash('warning', 'Size, colour and SKU are all required.');
-      return res.redirect(`/admin/products/${productId}/edit`);
+    const [[product]] = await pool.query('SELECT id FROM products WHERE id = ?', [productId]);
+    if (!product) return res.status(404).render('errors/404', { title: 'Product not found' });
+
+    const { values, error } = readVariant({
+      color: req.body.color, size: req.body.size, stock: req.body.stock_quantity
+    });
+    if (error) {
+      req.flash('warning', error);
+      return res.redirect(back);
     }
 
-    await pool.query(`
-      INSERT INTO product_variants (product_id, size, color, sku, stock_quantity)
-      VALUES (?, ?, ?, ?, ?)
-    `, [productId, size, color, sku, parseInt(stock_quantity, 10) || 0]);
+    // Each problem gets its own message. The old version said "that
+    // size and colour exists, or that SKU is taken", so you couldn't
+    // tell which one to fix.
+    const [[existing]] = await pool.query(`
+      SELECT color, size FROM product_variants
+      WHERE product_id = ? AND LOWER(color) = LOWER(?) AND LOWER(size) = LOWER(?)
+    `, [productId, values.color, values.size]);
+    if (existing) {
+      req.flash('warning',
+        `${existing.color} · ${existing.size} is already on this product. Change its stock in the table instead.`);
+      return res.redirect(back);
+    }
 
-    req.flash('success', `Added ${color} · ${size}.`);
-    res.redirect(`/admin/products/${productId}/edit`);
+    // SKU is optional now. Blank means "make one for me".
+    const typedSku = String(req.body.sku || '').trim();
+    if (typedSku.length > 64) {
+      req.flash('warning', 'SKU can be at most 64 characters.');
+      return res.redirect(back);
+    }
+    if (typedSku) {
+      const [[owner]] = await pool.query(`
+        SELECT p.name FROM product_variants v
+        JOIN products p ON p.id = v.product_id
+        WHERE v.sku = ?
+      `, [typedSku]);
+      if (owner) {
+        req.flash('warning',
+          `SKU "${typedSku}" is already used by ${owner.name}. Leave SKU blank and one will be made for you.`);
+        return res.redirect(back);
+      }
+    }
+
+    const sku = await insertVariant(pool, productId, values, typedSku);
+
+    req.flash('success', `Added ${values.color} · ${values.size} with ${values.stock} in stock (SKU ${sku}).`);
+    res.redirect(back);
   } catch (err) {
     console.error(err);
-    req.flash('error', err.code === 'ER_DUP_ENTRY'
-      ? 'That size and colour already exists for this product, or that SKU is taken.'
+    req.flash('error', err.code === 'ER_DATA_TOO_LONG'
+      ? 'One of those values is too long for the database.'
       : 'Could not add the variant.');
-    res.redirect(`/admin/products/${productId}/edit`);
+    res.redirect(back);
   }
 });
 

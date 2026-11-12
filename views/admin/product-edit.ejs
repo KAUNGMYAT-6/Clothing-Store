@@ -163,25 +163,38 @@
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="col-6 col-md-3">
             <label for="v-color" class="visually-hidden">Colour</label>
-            <input id="v-color" name="color" class="form-control form-control-sm" placeholder="Colour" required>
+            <input id="v-color" name="color" class="form-control form-control-sm" placeholder="Colour"
+                   list="colour-suggestions" maxlength="50" required>
           </div>
           <div class="col-6 col-md-2">
             <label for="v-size" class="visually-hidden">Size</label>
-            <input id="v-size" name="size" class="form-control form-control-sm" placeholder="Size" required>
+            <input id="v-size" name="size" class="form-control form-control-sm" placeholder="Size"
+                   list="size-suggestions" maxlength="10" required>
           </div>
           <div class="col-7 col-md-4">
-            <label for="v-sku" class="visually-hidden">SKU</label>
-            <input id="v-sku" name="sku" class="form-control form-control-sm" placeholder="SKU" required>
+            <label for="v-sku" class="visually-hidden">SKU (optional)</label>
+            <input id="v-sku" name="sku" class="form-control form-control-sm"
+                   placeholder="SKU (optional)" maxlength="64">
           </div>
           <div class="col-5 col-md-2">
             <label for="v-stock" class="visually-hidden">Stock</label>
-            <input id="v-stock" name="stock_quantity" type="number" min="0" value="0"
+            <input id="v-stock" name="stock_quantity" type="number" min="0" max="100000" step="1" value="0"
                    class="form-control form-control-sm" placeholder="Stock">
           </div>
           <div class="col-md-1 d-grid">
             <button class="btn btn-sm btn-indigo">Add</button>
           </div>
         </form>
+        <div class="form-text mt-2">
+          Leave SKU blank and one is made for you. Colours and sizes are tidied when saved: "navy blue" becomes Navy Blue, "xl" becomes XL.
+        </div>
+
+        <datalist id="size-suggestions">
+          <% sizeSuggestions.forEach(function (s) { %><option value="<%= s %>"><% }) %>
+        </datalist>
+        <datalist id="colour-suggestions">
+          <% colourSuggestions.forEach(function (c) { %><option value="<%= c %>"><% }) %>
+        </datalist>
       </div>
     </div>
 

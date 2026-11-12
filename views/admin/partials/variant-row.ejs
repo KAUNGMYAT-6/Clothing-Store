@@ -1,0 +1,20 @@
+<%#
+  One colour / size / stock row on the new-product form.
+  Local: row = { color, size, stock } (empty strings for a blank row)
+  The three names repeat on every row; the server reads them as lists.
+%>
+<div class="variant-row" data-variant-row>
+  <input type="text" name="variant_color" class="form-control form-control-sm"
+         placeholder="Colour" aria-label="Colour" list="colour-suggestions" maxlength="50"
+         value="<%= row.color %>">
+  <input type="text" name="variant_size" class="form-control form-control-sm"
+         placeholder="Size" aria-label="Size" list="size-suggestions" maxlength="10"
+         value="<%= row.size %>">
+  <input type="number" name="variant_stock" class="form-control form-control-sm"
+         placeholder="0" aria-label="Stock" min="0" max="100000" step="1"
+         value="<%= row.stock %>">
+  <button type="button" class="btn-icon btn-icon--danger" data-remove-variant-row data-js-only hidden
+          aria-label="Remove this row">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+</div>
