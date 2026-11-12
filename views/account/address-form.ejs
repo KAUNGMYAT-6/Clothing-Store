@@ -1,0 +1,42 @@
+<%- include('../partials/header') %>
+
+<div style="font-size:.82rem; color:var(--ink-mute)" class="mb-3">
+  <a href="/account/addresses" class="text-mute">Addresses</a>
+  <span style="opacity:.5">/</span>
+  <span class="text-soft"><%= address ? 'Edit' : 'New' %></span>
+</div>
+
+<h1 class="mb-4"><%= address ? 'Edit address' : 'New address' %></h1>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="surface p-4">
+      <% if (error) { %>
+        <div class="flash flash--error mb-4">
+          <span class="flash__icon" aria-hidden="true">✕</span>
+          <span class="flash__text"><%= error %></span>
+        </div>
+      <% } %>
+
+      <form method="POST" action="<%= address ? '/account/addresses/' + address.id : '/account/addresses' %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <%- include('partials/address-fields', { values: values, conditional: false }) %>
+
+        <% if (!address || !address.is_default) { %>
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" name="is_default" id="is_default">
+            <label class="form-check-label" for="is_default">Use as my default address</label>
+          </div>
+        <% } %>
+
+        <div class="d-flex gap-2 mt-4">
+          <button class="btn btn-accent"><%= address ? 'Save changes' : 'Save address' %></button>
+          <a href="/account/addresses" class="btn btn-plain">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

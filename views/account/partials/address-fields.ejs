@@ -1,0 +1,58 @@
+<%#
+  Address inputs shared by the address book and checkout.
+  Locals:
+    values       what to prefill (an address row, or what was just submitted)
+    conditional  true at checkout when saved addresses exist: the fields are
+                 only required when "Use a new address" is picked, so app.js
+                 switches `required` on and off instead of it being fixed here
+%>
+<%
+  const v = locals.values || {};
+  // Fixed strings only, never user input, so printing them raw is safe
+  const req = locals.conditional ? 'data-required-when-new' : 'required';
+%>
+<div class="row g-3">
+  <div class="col-md-6">
+    <label for="recipient_name" class="form-label">Recipient name</label>
+    <input id="recipient_name" type="text" name="recipient_name" class="form-control"
+           maxlength="100" autocomplete="name" <%- req %>
+           value="<%= v.recipient_name || '' %>">
+  </div>
+
+  <div class="col-md-6">
+    <label for="phone" class="form-label">Phone <span class="text-mute fw-normal">(optional)</span></label>
+    <input id="phone" type="tel" name="phone" class="form-control"
+           maxlength="30" autocomplete="tel" placeholder="9123 4567"
+           value="<%= v.phone || '' %>">
+    <div class="form-text">For the courier, if they can't find you.</div>
+  </div>
+
+  <div class="col-12">
+    <label for="line1" class="form-label">Block / house number and street</label>
+    <input id="line1" type="text" name="line1" class="form-control"
+           maxlength="255" autocomplete="address-line1" placeholder="Blk 123 Woodlands Ave 1" <%- req %>
+           value="<%= v.line1 || '' %>">
+  </div>
+
+  <div class="col-md-8">
+    <label for="line2" class="form-label">Unit, building <span class="text-mute fw-normal">(optional)</span></label>
+    <input id="line2" type="text" name="line2" class="form-control"
+           maxlength="255" autocomplete="address-line2" placeholder="#04-56"
+           value="<%= v.line2 || '' %>">
+  </div>
+
+  <div class="col-md-4">
+    <label for="postal_code" class="form-label">Postal code</label>
+    <input id="postal_code" type="text" name="postal_code" class="form-control"
+           inputmode="numeric" pattern="\s*\d{3}\s*\d{3}\s*" maxlength="8"
+           autocomplete="postal-code" placeholder="730123" <%- req %>
+           value="<%= v.postal_code || '' %>">
+  </div>
+
+  <div class="col-md-6">
+    <label for="label" class="form-label">Label <span class="text-mute fw-normal">(optional)</span></label>
+    <input id="label" type="text" name="label" class="form-control"
+           maxlength="50" placeholder="Home, Office, Mum's place"
+           value="<%= v.label || '' %>">
+  </div>
+</div>

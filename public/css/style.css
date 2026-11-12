@@ -941,3 +941,53 @@ a:hover { color: var(--orange-500); }
   transition: filter .18s var(--ease), transform .18s var(--snap);
 }
 .btn-danger-solid:hover { filter: brightness(1.08); transform: translateY(-1px); color: #fff; }
+
+/* ============================================================
+   Address book + checkout address picker
+   ============================================================ */
+.address-card {
+  height: 100%;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.address-card:hover { border-color: var(--indigo-300); box-shadow: var(--sh); }
+.address-card.is-default { border-color: var(--indigo-500); box-shadow: 0 0 0 1px var(--indigo-500); }
+
+.address-badge {
+  display: inline-block;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  background: var(--indigo-100);
+  color: var(--indigo-700);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* A whole card is the click target for its radio button */
+.address-option {
+  display: flex;
+  gap: .8rem;
+  align-items: flex-start;
+  padding: .9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color .18s var(--ease), background .18s var(--ease);
+}
+.address-option:hover { border-color: var(--indigo-300); }
+.address-option:has(input:checked) {
+  border-color: var(--indigo-500);
+  background: var(--indigo-50);
+}
+.address-option input {
+  margin-top: .25rem;
+  accent-color: var(--indigo-600);
+  flex-shrink: 0;
+}
+.address-option__body { display: flex; flex-direction: column; min-width: 0; }
+.address-option input:focus-visible { outline: 3px solid var(--indigo-300); outline-offset: 2px; }

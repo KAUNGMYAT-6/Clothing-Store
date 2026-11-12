@@ -247,4 +247,46 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // ============================================================
+  // 7. Checkout address picker
+  // ------------------------------------------------------------
+  // Shows the new-address fields only when "Use a new address"
+  // is picked, and makes them required only then. Otherwise the
+  // browser would refuse to submit empty fields the customer
+  // can't even see.
+  // ============================================================
+  const addressChoices = document.querySelectorAll('[data-address-choice]');
+  const newAddress = document.querySelector('[data-new-address]');
+
+  if (addressChoices.length && newAddress) {
+    function syncAddressChoice() {
+      const picked = document.querySelector('[data-address-choice]:checked');
+      const isNew = !picked || picked.value === 'new';
+
+      newAddress.hidden = !isNew;
+      newAddress.querySelectorAll('[data-required-when-new]').forEach(function (input) {
+        input.required = isNew;
+      });
+    }
+
+    addressChoices.forEach(function (choice) {
+      choice.addEventListener('change', syncAddressChoice);
+    });
+    syncAddressChoice();
+  }
+
+
+  // ============================================================
+  // 8. Confirm before destructive buttons
+  // ------------------------------------------------------------
+  // <form data-confirm="Delete this address?"> asks first. The
+  // CSP blocks onsubmit="return confirm(...)", which is why this
+  // lives here instead of in the HTML.
+  // ============================================================
+  document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (!window.confirm(form.dataset.confirm)) e.preventDefault();
+    });
+  });
+
 });

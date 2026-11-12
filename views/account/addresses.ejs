@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+<%- include('partials/nav') %>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <div class="text-mute" style="font-size:.86rem">
+    <%= addresses.length %> of <%= max %> saved
+  </div>
+  <% if (addresses.length < max) { %>
+    <a href="/account/addresses/new" class="btn btn-accent">Add an address</a>
+  <% } %>
+</div>
+
+<% if (addresses.length === 0) { %>
+
+  <div class="empty-state">
+    <h3 class="h5 mb-2">No saved addresses</h3>
+    <p class="text-mute mb-3">Save one and checkout fills it in for you.</p>
+    <a href="/account/addresses/new" class="btn btn-accent">Add your first address</a>
+  </div>
+
+<% } else { %>
+
+  <div class="row g-3">
+    <% addresses.forEach(function (a) { %>
+      <div class="col-md-6">
+        <article class="address-card <%= a.is_default ? 'is-default' : '' %>">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <strong class="font-display"><%= a.label || 'Address' %></strong>
+            <% if (a.is_default) { %>
+              <span class="address-badge">Default</span>
+            <% } %>
+          </div>
+
+          <%# pre-line turns the line breaks from formatAddress into real lines %>
+          <address class="text-soft mb-3" style="white-space:pre-line; font-size:.9rem; line-height:1.65"><%= a.recipient_name %>
+<%= formatAddress(a) %></address>
+
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a href="/account/addresses/<%= a.id %>/edit" class="btn btn-sm btn-soft">Edit</a>
+
+            <% if (!a.is_default) { %>
+              <form method="POST" action="/account/addresses/<%= a.id %>/default">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-sm btn-plain">Make default</button>
+              </form>
+            <% } %>
+
+            <form method="POST" action="/account/addresses/<%= a.id %>/delete" class="ms-auto"
+                  data-confirm="Delete this address?">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-plain text-danger">Delete</button>
+            </form>
+          </div>
+        </article>
+      </div>
+    <% }) %>
+  </div>
+
+<% } %>
+
+<%- include('../partials/footer') %>

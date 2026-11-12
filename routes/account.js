@@ -3,6 +3,10 @@ const pool = require('../db/pool');
 const { requireLogin } = require('../middleware/auth');
 const bcrypt = require('bcrypt');
 const { upload, uploadToCloudinary, deleteFromCloudinary } = require('../lib/upload');
+const {
+  MAX_ADDRESSES, readAddressForm, formatAddress, listAddresses, getAddress,
+  countAddresses, setDefault, createAddress, updateAddress, deleteAddress
+} = require('../lib/addresses');
 
 const router = express.Router();
 
@@ -350,6 +354,137 @@ router.post('/delete', async (req, res, next) => {
     }
 
     req.session.destroy(() => res.redirect('/?deleted=1'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============================================================
+// ADDRESS BOOK
+// ============================================================
+
+// Turns "/addresses/12/edit" into 12, or null for anything that
+// isn't a plain whole number
+function addressIdFrom(req) {
+  const id = Number(req.params.id);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function renderAddressForm(res, { status = 200, address = null, values = {}, error = null }) {
+  res.status(status).render('account/address-form', {
+    title: address ? 'Edit address' : 'New address',
+    active: 'addresses',
+    address,
+    values,
+    error
+  });
+}
+
+router.get('/addresses', async (req, res, next) => {
+  try {
+    const addresses = await listAddresses(req.session.user.id);
+    res.render('account/addresses', {
+      title: 'Addresses',
+      active: 'addresses',
+      addresses,
+      max: MAX_ADDRESSES,
+      formatAddress
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/addresses/new', async (req, res, next) => {
+  try {
+    if (await countAddresses(pool, req.session.user.id) >= MAX_ADDRESSES) {
+      req.flash('warning', `You can save up to ${MAX_ADDRESSES} addresses. Delete one to add another.`);
+      return res.redirect('/account/addresses');
+    }
+    // Most people are adding their own address, so start with their name
+    renderAddressForm(res, { values: { recipient_name: req.session.user.name } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/addresses', async (req, res, next) => {
+  try {
+    const userId = req.session.user.id;
+
+    if (await countAddresses(pool, userId) >= MAX_ADDRESSES) {
+      req.flash('warning', `You can save up to ${MAX_ADDRESSES} addresses. Delete one to add another.`);
+      return res.redirect('/account/addresses');
+    }
+
+    const { values, error } = readAddressForm(req.body);
+    if (error) return renderAddressForm(res, { status: 400, values, error });
+
+    await createAddress(pool, userId, values, req.body.is_default === 'on');
+
+    req.flash('success', 'Address saved.');
+    res.redirect('/account/addresses');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/addresses/:id/edit', async (req, res, next) => {
+  try {
+    const id = addressIdFrom(req);
+    const address = id && await getAddress(req.session.user.id, id);
+    if (!address) return res.status(404).render('errors/404', { title: 'Address not found' });
+
+    renderAddressForm(res, { address, values: address });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/addresses/:id', async (req, res, next) => {
+  try {
+    const userId = req.session.user.id;
+    const id = addressIdFrom(req);
+    const address = id && await getAddress(userId, id);
+    if (!address) return res.status(404).render('errors/404', { title: 'Address not found' });
+
+    const { values, error } = readAddressForm(req.body);
+    if (error) return renderAddressForm(res, { status: 400, address, values, error });
+
+    await updateAddress(userId, id, values);
+    if (req.body.is_default === 'on') await setDefault(pool, userId, id);
+
+    req.flash('success', 'Address updated.');
+    res.redirect('/account/addresses');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/addresses/:id/default', async (req, res, next) => {
+  try {
+    const userId = req.session.user.id;
+    const id = addressIdFrom(req);
+    const address = id && await getAddress(userId, id);
+    if (!address) return res.status(404).render('errors/404', { title: 'Address not found' });
+
+    await setDefault(pool, userId, id);
+
+    req.flash('success', 'Default address changed.');
+    res.redirect('/account/addresses');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/addresses/:id/delete', async (req, res, next) => {
+  try {
+    const id = addressIdFrom(req);
+    const deleted = id && await deleteAddress(req.session.user.id, id);
+    if (!deleted) return res.status(404).render('errors/404', { title: 'Address not found' });
+
+    req.flash('success', 'Address deleted.');
+    res.redirect('/account/addresses');
   } catch (err) {
     next(err);
   }

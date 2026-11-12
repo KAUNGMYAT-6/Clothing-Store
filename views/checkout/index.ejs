@@ -16,6 +16,13 @@
 
   <!-- FORM -->
   <div class="col-lg-7">
+    <% if (error) { %>
+      <div class="flash flash--error mb-3">
+        <span class="flash__icon" aria-hidden="true">✕</span>
+        <span class="flash__text"><%= error %></span>
+      </div>
+    <% } %>
+
     <form method="POST" action="/checkout/session">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
@@ -24,24 +31,62 @@
         <div>
           <label for="email" class="form-label">Email</label>
           <input id="email" type="email" name="email" class="form-control" required
-                 value="<%= user.email %>">
+                 autocomplete="email" value="<%= email %>">
           <div class="form-text">Your order confirmation goes here.</div>
         </div>
       </div>
 
       <div class="surface p-4 mb-3">
-        <div class="panel-title mb-3">Delivery address</div>
-
-        <div class="mb-3">
-          <label for="shipping_name" class="form-label">Full name</label>
-          <input id="shipping_name" type="text" name="shipping_name" class="form-control" required
-                 value="<%= user.name %>">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="panel-title">Delivery address</div>
+          <% if (addresses.length) { %>
+            <a href="/account/addresses" class="text-mute" style="font-size:.8rem">Manage addresses</a>
+          <% } %>
         </div>
 
-        <div>
-          <label for="shipping_address" class="form-label">Address</label>
-          <textarea id="shipping_address" name="shipping_address" class="form-control"
-                    rows="3" required placeholder="Block and unit, street, postal code"></textarea>
+        <% if (addresses.length) { %>
+          <div class="d-flex flex-column gap-2 mb-3" role="radiogroup" aria-label="Delivery address">
+            <% addresses.forEach(function (a) { %>
+              <label class="address-option">
+                <input type="radio" name="address_id" value="<%= a.id %>" data-address-choice
+                       <%= selected === String(a.id) ? 'checked' : '' %>>
+                <span class="address-option__body">
+                  <span class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <strong class="font-display"><%= a.recipient_name %></strong>
+                    <% if (a.label) { %><span class="text-mute" style="font-size:.78rem"><%= a.label %></span><% } %>
+                    <% if (a.is_default) { %><span class="address-badge">Default</span><% } %>
+                  </span>
+                  <span class="text-soft" style="white-space:pre-line; font-size:.86rem; line-height:1.55"><%= formatAddress(a) %></span>
+                </span>
+              </label>
+            <% }) %>
+
+            <label class="address-option">
+              <input type="radio" name="address_id" value="new" data-address-choice
+                     <%= selected === 'new' ? 'checked' : '' %>>
+              <span class="address-option__body">
+                <strong class="font-display">Use a new address</strong>
+              </span>
+            </label>
+          </div>
+        <% } else { %>
+          <input type="hidden" name="address_id" value="new">
+        <% } %>
+
+        <%# Without JavaScript this stays visible, and the server still checks it %>
+        <div data-new-address>
+          <%- include('../account/partials/address-fields', {
+                values: values,
+                conditional: addresses.length > 0
+              }) %>
+
+          <% if (canSaveAddress) { %>
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" name="save_address" id="save_address"
+                     <%= saveAddress ? 'checked' : '' %>>
+              <label class="form-check-label" for="save_address">Save this address for next time</label>
+            </div>
+          <% } %>
         </div>
       </div>
 
