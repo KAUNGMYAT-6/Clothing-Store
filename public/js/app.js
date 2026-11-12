@@ -87,38 +87,127 @@ document.addEventListener('DOMContentLoaded', function () {
     const input = stepper.querySelector('input[type="number"]');
     if (!input) return;
 
+    const down = stepper.querySelector('[data-step="down"]');
+    const up = stepper.querySelector('[data-step="up"]');
     const autoSubmit = stepper.hasAttribute('data-autosubmit');
     const form = stepper.closest('form');
     let timer = null;
 
+    // Read the limits fresh each time: the product page changes max
+    // when a different size is picked. No max (admin stock) = no limit.
+    function limits() {
+      return {
+        min: input.min === '' ? 0 : Number(input.min),
+        max: input.max === '' ? Infinity : Number(input.max)
+      };
+    }
+
+    // Grey out a button that can't do anything. A disabled button
+    // can't be clicked, focused or submitted, so it isn't just a look.
+    function syncButtons() {
+      const { min, max } = limits();
+      const value = Number(input.value);
+      if (down) down.disabled = !(value > min);
+      if (up) up.disabled = !(value < max);
+    }
+
+    // Pull a typed number back inside the limits
+    function clamp() {
+      const { min, max } = limits();
+      let value = parseInt(input.value, 10);
+      if (Number.isNaN(value)) value = min;
+      input.value = Math.min(max, Math.max(min, value));
+    }
+
+    function scheduleSubmit() {
+      if (!autoSubmit || !form) return;
+      clearTimeout(timer);
+      timer = setTimeout(function () { form.submit(); }, 600);
+    }
+
     function changeBy(amount) {
-      const min = Number(input.min || 1);
-      const max = Number(input.max || 99);
+      const { min, max } = limits();
       const current = Number(input.value) || min;
       const next = Math.min(max, Math.max(min, current + amount));
-
-      if (next === current) return;  // already at a limit, nothing to do
+      if (next === current) return;
       input.value = next;
+      syncButtons();
+      // Lets anything else on the page (like the stock hint) react
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      scheduleSubmit();
+    }
 
-      if (autoSubmit && form) {
-        clearTimeout(timer);
-        timer = setTimeout(function () { form.submit(); }, 600);
+    if (down) down.addEventListener('click', function () { changeBy(-1); });
+    if (up) up.addEventListener('click', function () { changeBy(1); });
+
+    // While typing, just update the buttons. When they leave the box
+    // (or press Enter), fix the number up and save if this is the cart.
+    input.addEventListener('input', syncButtons);
+    input.addEventListener('change', function () {
+      clamp();
+      syncButtons();
+      scheduleSubmit();
+    });
+
+    // Other code changes min/max and then fires this
+    input.addEventListener('limits-changed', function () {
+      clamp();
+      syncButtons();
+    });
+
+    syncButtons();
+  });
+
+
+  // ============================================================
+  // 3b. Product page: quantity follows the chosen size's stock
+  // ------------------------------------------------------------
+  // Each <option> carries data-stock. Picking one sets the quantity
+  // limit to that stock (capped per order), lowers the number if
+  // it's now too high, and explains why + stopped working.
+  // The server checks again in routes/cart.js, so this is for
+  // convenience, not security.
+  // ============================================================
+  document.querySelectorAll('[data-qty-for]').forEach(function (stepper) {
+    const select = document.getElementById(stepper.dataset.qtyFor);
+    const input = stepper.querySelector('input[type="number"]');
+    const hint = document.querySelector('[data-qty-hint]');
+    const perItem = Number(stepper.dataset.maxPerItem) || 10;
+    if (!select || !input) return;
+
+    function chosenStock() {
+      const option = select.options[select.selectedIndex];
+      return option && option.dataset.stock !== undefined ? Number(option.dataset.stock) : null;
+    }
+
+    function updateHint() {
+      if (!hint) return;
+      const stock = chosenStock();
+      const atMax = Number(input.value) >= Number(input.max);
+      if (stock === null || !atMax) {
+        hint.textContent = '';
+      } else if (stock <= perItem) {
+        hint.textContent = stock === 1
+          ? 'Only 1 left in this size.'
+          : 'That\'s all ' + stock + ' we have in this size.';
+      } else {
+        hint.textContent = 'You can buy up to ' + perItem + ' of each size.';
       }
     }
 
-    stepper.querySelectorAll('[data-step]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        changeBy(button.dataset.step === 'up' ? 1 : -1);
-      });
-    });
-
-    // Someone can also type into the box directly
-    if (autoSubmit && form) {
-      input.addEventListener('change', function () {
-        clearTimeout(timer);
-        timer = setTimeout(function () { form.submit(); }, 600);
-      });
+    function applyStock() {
+      const stock = chosenStock();
+      if (stock !== null) {
+        input.max = Math.max(1, Math.min(stock, perItem));
+        input.dispatchEvent(new Event('limits-changed'));
+      }
+      updateHint();
     }
+
+    select.addEventListener('change', applyStock);
+    input.addEventListener('input', updateHint);
+    input.addEventListener('change', updateHint);
+    applyStock();
   });
 
 

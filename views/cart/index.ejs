@@ -75,7 +75,7 @@
                     <span class="stepper" data-stepper data-autosubmit>
                       <button type="button" data-step="down" aria-label="Decrease quantity of <%= item.name %>">&minus;</button>
                       <input type="number" name="quantity" value="<%= item.quantity %>"
-                             min="1" max="<%= Math.max(stock, 1) %>"
+                             min="1" max="<%= Math.max(Math.min(stock, 10), 1) %>"
                              aria-label="Quantity of <%= item.name %>">
                       <button type="button" data-step="up" aria-label="Increase quantity of <%= item.name %>">+</button>
                     </span>

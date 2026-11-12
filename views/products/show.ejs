@@ -54,7 +54,12 @@
     </div>
     <p class="text-soft mb-4"><%= product.description %></p>
 
-    <% const totalStock = variants.reduce(function (s, v) { return s + Number(v.stock_quantity); }, 0); %>
+    <%
+      const totalStock = variants.reduce(function (s, v) { return s + Number(v.stock_quantity); }, 0);
+      // Same per-size limit as routes/cart.js
+      const MAX_PER_ITEM = 10;
+      const biggestStock = variants.reduce(function (m, v) { return Math.max(m, Number(v.stock_quantity)); }, 0);
+    %>
 
     <% if (variants.length === 0) { %>
 
@@ -77,7 +82,7 @@
             <% variants.forEach(function (v) {
                  const s = Number(v.stock_quantity);
             %>
-              <option value="<%= v.id %>" <%= s === 0 ? 'disabled' : '' %>>
+              <option value="<%= v.id %>" data-stock="<%= s %>" <%= s === 0 ? 'disabled' : '' %>>
                 <%= v.color %> · Size <%= v.size %><%
                   if (s === 0) { %> — sold out<% }
                   else if (s <= 3) { %> — only <%= s %> left<% }
@@ -90,12 +95,15 @@
         <div class="mb-4">
           <label for="qty" class="form-label">Quantity</label>
           <div>
-            <span class="stepper" data-stepper>
+            <%# app.js lowers max to the chosen size's stock %>
+            <span class="stepper" data-stepper data-qty-for="variant" data-max-per-item="<%= MAX_PER_ITEM %>">
               <button type="button" data-step="down" aria-label="Decrease quantity">&minus;</button>
-              <input id="qty" type="number" name="quantity" value="1" min="1" max="10">
+              <input id="qty" type="number" name="quantity" value="1" min="1"
+                     max="<%= Math.max(1, Math.min(biggestStock, MAX_PER_ITEM)) %>">
               <button type="button" data-step="up" aria-label="Increase quantity">+</button>
             </span>
           </div>
+          <div class="form-text" data-qty-hint aria-live="polite"></div>
         </div>
 
         <button class="btn btn-accent btn-lg w-100">Add to cart</button>
