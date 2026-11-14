@@ -44,4 +44,27 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ============================================================
+// Privacy policy and terms
+// ------------------------------------------------------------
+// Google requires both, on the site's own domain, before an app
+// using "Sign in with Google" can be published for everyone.
+// When the wording changes, update LEGAL_UPDATED too.
+// ============================================================
+const LEGAL_UPDATED = '14 November 2026';
+
+function legalPage(view, title) {
+  return (req, res) => {
+    res.render(`legal/${view}`, {
+      title,
+      updated: LEGAL_UPDATED,
+      supportEmail: process.env.SUPPORT_EMAIL || null,
+      siteUrl: process.env.BASE_URL || ''
+    });
+  };
+}
+
+router.get('/privacy', legalPage('privacy', 'Privacy policy'));
+router.get('/terms', legalPage('terms', 'Terms of use'));
+
 module.exports = router;

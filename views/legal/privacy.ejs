@@ -1,0 +1,148 @@
+<%- include('../partials/header') %>
+
+<article class="legal">
+  <div class="eyebrow mb-2">Last updated <%= updated %></div>
+  <h1 class="mb-3">Privacy policy</h1>
+
+  <div class="legal__note">
+    DeniseClothing is a demo store built as a student portfolio project. No real products are sold,
+    nothing is shipped, and payments run in Stripe's test mode, so no real money is ever taken.
+    The site still handles personal data properly, and this page explains how.
+  </div>
+
+  <h2>The short version</h2>
+  <ul>
+    <li>We only collect what the shop needs to work: your account, your orders and the things you choose to add.</li>
+    <li>We never see or store your card number. Payments are handled by Stripe.</li>
+    <li>We don't sell your data, show ads, or use tracking or analytics cookies.</li>
+    <li>You can change your details or delete your account at any time from your account settings.</li>
+  </ul>
+
+  <h2>What we collect</h2>
+
+  <h3>When you make an account</h3>
+  <p>
+    Your name, email address and password. The password is never stored as you typed it.
+    We store a one-way bcrypt hash of it, which can't be turned back into the password.
+  </p>
+
+  <h3>When you sign in with Google</h3>
+  <p>
+    Google shares three things with us: your name, your email address and your Google account ID.
+    We use them only to create your account and sign you in. We don't get access to your Gmail,
+    contacts, files or anything else in your Google account.
+  </p>
+
+  <h3>When you place an order</h3>
+  <p>
+    What you bought, the prices, your email address, and the delivery name, address and phone
+    number you give us. Your card details go straight to Stripe and never pass through our server.
+    Stripe tells us only whether the payment succeeded.
+  </p>
+
+  <h3>Things you choose to add</h3>
+  <p>
+    Saved delivery addresses, product reviews (shown with your name) and a profile photo, if you upload one.
+  </p>
+
+  <h3>Your cart</h3>
+  <p>
+    If you shop without logging in, your cart is linked to a random code stored in your session,
+    so it can move into your account when you log in.
+  </p>
+
+  <h3>Cookies</h3>
+  <p>
+    We use one cookie, <code>store_sid</code>, which keeps you logged in and remembers your cart.
+    It lasts up to 7 days. It's needed for the site to work. We don't use advertising,
+    tracking or analytics cookies.
+  </p>
+
+  <h3>Security logs</h3>
+  <p>
+    To stop people guessing passwords, the site counts recent login and password-reset attempts
+    by IP address for a short time (up to an hour). Our hosting provider may also keep standard
+    server logs.
+  </p>
+
+  <h2>How we use it</h2>
+  <ul>
+    <li>To run your account and sign you in</li>
+    <li>To process orders and show you your order history</li>
+    <li>To send emails you need: order confirmations and password reset links. No newsletters or marketing.</li>
+    <li>To protect the site and its users from abuse</li>
+  </ul>
+
+  <h2>Who we share it with</h2>
+  <p>
+    Only the services the site needs to run, and only the data each one needs. None of them may
+    use your data for their own purposes.
+  </p>
+  <div class="table-responsive">
+    <table class="legal__table">
+      <thead>
+        <tr><th>Service</th><th>What it does</th><th>What it gets</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stripe</td><td>Takes card payments</td><td>Your email, what you're buying and the price. You enter your card on Stripe's own page.</td></tr>
+        <tr><td>Resend</td><td>Sends our emails</td><td>Your email address and the content of the email</td></tr>
+        <tr><td>Cloudinary</td><td>Stores images</td><td>Profile photos you upload</td></tr>
+        <tr><td>Railway</td><td>Hosts the website and database</td><td>Everything above is stored on their servers</td></tr>
+        <tr><td>Google</td><td>"Continue with Google"</td><td>Only used if you choose to sign in with Google</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>We don't sell, rent or trade personal data to anyone.</p>
+
+  <h2>Data from Google</h2>
+  <p>
+    If you sign in with Google, we request only the basic scopes <code>openid</code>,
+    <code>email</code> and <code>profile</code>. From these we keep your name, email address
+    and Google account ID. We use them only to create and sign in to your DeniseClothing account.
+    We don't share them, sell them, use them for advertising, or use them to train AI models.
+  </p>
+  <p>
+    Our use of information received from Google APIs follows the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>,
+    including its Limited Use requirements.
+  </p>
+  <p>
+    You can remove DeniseClothing's access at any time in your Google account under
+    <a href="https://myaccount.google.com/connections" rel="noopener">Third-party connections</a>.
+    Deleting your DeniseClothing account also deletes this data.
+  </p>
+
+  <h2>How long we keep it</h2>
+  <ul>
+    <li><strong>Your account</strong>, saved addresses, reviews, profile photo and cart: until you delete your account.</li>
+    <li><strong>Orders:</strong> kept as sales records. If you delete your account, your orders stay but are no longer linked to it.
+      Each order still holds the email address, delivery name and address used for it. You can ask us to remove those details (see below).</li>
+    <li><strong>Password reset links</strong> stop working after an hour, or as soon as one is used.</li>
+    <li><strong>Login sessions</strong> end after 7 days.</li>
+  </ul>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li><strong>See and change your details:</strong> your name, email, password and photo are under <a href="/account/settings">Account settings</a>, and your addresses under <a href="/account/addresses">Addresses</a>.</li>
+    <li><strong>Delete your account:</strong> at the bottom of Account settings. This can't be undone.</li>
+    <li><strong>Anything else</strong>, like a copy of what we hold about you or removing details from old orders:
+      <%- include('partials/contact') %>.</li>
+  </ul>
+
+  <h2>Keeping it safe</h2>
+  <p>
+    The site only runs over HTTPS. Passwords are hashed with bcrypt, reset links are stored as hashes and expire,
+    forms are protected against cross-site request forgery, and every page that shows personal data checks
+    that it belongs to the person logged in.
+  </p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes, we'll update it here and change the date at the top.</p>
+
+  <h2>Contact</h2>
+  <p>For any question about this policy or your data, <%- include('partials/contact') %>.</p>
+
+  <p class="mt-4"><a href="/terms">Read the terms of use</a></p>
+</article>
+
+<%- include('../partials/footer') %>

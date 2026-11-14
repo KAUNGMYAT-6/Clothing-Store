@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "stripe": "stripe listen --events checkout.session.completed --forward-to localhost:3000/webhook/stripe"
+    "stripe": "stripe listen --events checkout.session.completed --forward-to localhost:3000/webhook/stripe",
+    "test": "node tests/run-tests.js"
   },
   "keywords": [],
   "author": "KAUNG MYAT",

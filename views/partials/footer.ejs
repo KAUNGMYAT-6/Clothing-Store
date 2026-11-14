@@ -51,8 +51,13 @@
         </div>
       </div>
     </div>
-    <div class="mt-4 pt-4" style="border-top:1px solid rgba(255,255,255,.1); font-size:.82rem;">
-      &copy; <%= new Date().getFullYear() %> DeniseClothing 
+    <div class="mt-4 pt-4 d-flex flex-wrap justify-content-between gap-2" style="border-top:1px solid rgba(255,255,255,.1); font-size:.82rem;">
+      <span>&copy; <%= new Date().getFullYear() %> DeniseClothing — demo project</span>
+      <%# Google checks the home page links to the privacy policy %>
+      <span class="d-flex gap-3">
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of use</a>
+      </span>
     </div>
   </div>
 </footer>

@@ -1,0 +1,2 @@
+<%# How to reach the person running the site. Set SUPPORT_EMAIL in the environment. Kept on one line so no space appears before the full stop that follows it. -%>
+<% if (supportEmail) { %>email <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a><% } else { %>use the contact details on the project's GitHub page<% } -%>

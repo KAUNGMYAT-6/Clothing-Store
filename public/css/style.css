@@ -1010,3 +1010,28 @@ a:hover { color: var(--orange-500); }
   color: var(--ink-mute);
 }
 
+/* ============================================================
+   Privacy policy and terms pages
+   ============================================================ */
+.legal { max-width: 72ch; margin: 0 auto; padding-bottom: 2rem; }
+.legal h2 { font-size: 1.25rem; margin: 2.2rem 0 .7rem; }
+.legal h3 { font-size: 1rem; margin: 1.4rem 0 .4rem; }
+.legal p, .legal li { color: var(--ink-soft); line-height: 1.7; }
+.legal ul { padding-left: 1.2rem; }
+.legal li { margin-bottom: .35rem; }
+.legal code { font-size: .88em; color: var(--indigo-700); }
+.legal__note {
+  padding: 1rem 1.2rem;
+  border-radius: var(--r-md);
+  background: var(--indigo-50);
+  color: var(--indigo-700);
+  line-height: 1.6;
+}
+.legal__table { width: 100%; border-collapse: collapse; margin: .5rem 0 1rem; font-size: .9rem; }
+.legal__table th, .legal__table td {
+  text-align: left; vertical-align: top;
+  padding: .6rem .7rem; border-bottom: 1px solid var(--line);
+}
+.legal__table th { font-size: .74rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-mute); }
+.legal__table td:first-child { font-weight: 600; white-space: nowrap; color: var(--ink); }
+

@@ -1,0 +1,74 @@
+<%- include('../partials/header') %>
+
+<article class="legal">
+  <div class="eyebrow mb-2">Last updated <%= updated %></div>
+  <h1 class="mb-3">Terms of use</h1>
+
+  <div class="legal__note">
+    DeniseClothing is a demo store built as a student portfolio project. You're welcome to try it out,
+    but it isn't a real shop.
+  </div>
+
+  <h2>1. This is a demo</h2>
+  <ul>
+    <li>No real products are for sale and nothing will be shipped.</li>
+    <li>Payments run in Stripe's test mode. No real money is taken. Use Stripe's test card
+      <code>4242 4242 4242 4242</code> with any future date and any 3-digit CVC.</li>
+    <li>Please don't enter real card details. Test mode won't accept them anyway.</li>
+    <li>Products, prices and stock levels are made up and may change at any time.</li>
+  </ul>
+
+  <h2>2. Your account</h2>
+  <ul>
+    <li>Use your own email address and keep your password to yourself.</li>
+    <li>You're responsible for what happens under your account.</li>
+    <li>You can delete your account at any time from <a href="/account/settings">Account settings</a>.</li>
+    <li>We may remove accounts that break these terms.</li>
+  </ul>
+
+  <h2>3. Using the site fairly</h2>
+  <p>Please don't:</p>
+  <ul>
+    <li>try to get into other people's accounts or data</li>
+    <li>try to break, overload or get around the site's security</li>
+    <li>use automated tools to scrape the site or create accounts</li>
+    <li>upload anything illegal, offensive or that you don't have the right to share</li>
+  </ul>
+  <p>
+    If you find a security problem, please tell us instead of using it.
+    To get in touch, <%- include('partials/contact') %>.
+  </p>
+
+  <h2>4. Reviews and photos</h2>
+  <p>
+    Reviews you post are shown publicly with your name, and your profile photo is shown in your account.
+    You keep ownership of what you post, and you allow us to show it on this site.
+    We may remove reviews or photos that break these terms.
+  </p>
+
+  <h2>5. Availability</h2>
+  <p>
+    This is a student project, so the site may change, go offline or be taken down at any time without notice.
+    Data could also be reset while the project is being worked on.
+  </p>
+
+  <h2>6. No guarantees</h2>
+  <p>
+    The site is provided "as is", without any promise that it will be accurate, available or free of errors.
+    As far as the law allows, we aren't responsible for any loss that comes from using it.
+  </p>
+
+  <h2>7. Your privacy</h2>
+  <p>How we handle your data is explained in the <a href="/privacy">privacy policy</a>.</p>
+
+  <h2>8. Changes and law</h2>
+  <p>
+    We may update these terms. The date at the top shows when they last changed.
+    These terms are governed by the laws of Singapore.
+  </p>
+
+  <h2>9. Contact</h2>
+  <p>Questions about these terms? <%- include('partials/contact') %>.</p>
+</article>
+
+<%- include('../partials/footer') %>

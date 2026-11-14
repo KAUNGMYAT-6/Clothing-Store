@@ -1,19 +1,3 @@
--- ============================================================
--- DeniseClothing — database schema
--- ------------------------------------------------------------
--- RECONSTRUCTED from the queries in routes/ and lib/, because
--- the original file had been emptied. Every column the code
--- reads or writes is here.
---
--- Before trusting it over your real database, compare:
---   mysqldump --no-data --skip-comments -u root -p YOUR_DB > db/schema.dump.sql
--- and check the two agree. Your live database is the source
--- of truth; this file is what lets anyone else rebuild it.
---
--- Usage:  mysql -u root -p your_db < db/schema.sql
--- (the sessions table is created automatically on first run)
--- ============================================================
-
 CREATE TABLE IF NOT EXISTS users (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   name              VARCHAR(100) NOT NULL,

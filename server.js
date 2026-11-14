@@ -198,12 +198,19 @@ app.use((err, req, res, next) => {
 
 // ---------- Start ----------
 const required = ['DB_HOST', 'DB_USER', 'DB_NAME', 'SESSION_SECRET',
-                  'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'BASE_URL'];
+                  'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'BASE_URL',
+                  'RESEND_API_KEY', 'MAIL_FROM',
+                  'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',
+                  'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL',
+                  'SUPPORT_EMAIL'];
 const missing = required.filter(k => !process.env[k]);
 if (missing.length) {
+  // Shows up in Railway's deploy logs, which is the first place to
+  // look when something works locally but not online
   console.warn('Missing environment variables:', missing.join(', '));
 }
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
+  console.log(`Site address: ${process.env.BASE_URL || 'BASE_URL not set'}`);
 });
