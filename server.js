@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const { csrfSync } = require('csrf-sync');
 const path = require('path');
@@ -34,6 +35,10 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // ---------- Security headers ----------
+// Squash text responses (HTML, CSS, JS) before sending. A page is
+// usually 70-80% smaller over the wire, which matters on mobile data.
+app.use(compression());
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -51,7 +56,25 @@ app.use(helmet({
 // signature verification needs the raw body, and Stripe sends no CSRF token
 app.use('/', webhookRoutes);
 
-app.use(express.static(path.join(__dirname, 'public')));
+// ---------- Static files (CSS, JS, images) ----------
+// Pages link to /css/style.css?v=<version>. The version changes on every
+// deploy, so browsers can keep these files for a year and still pick up
+// a new one straight away after a deploy (the address is different).
+// Locally they're never cached, so CSS edits show up on refresh.
+const isProduction = process.env.NODE_ENV === 'production';
+app.locals.assetVersion = (process.env.RAILWAY_GIT_COMMIT_SHA || String(Date.now())).slice(0, 8);
+
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders(res) {
+    if (!isProduction) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (res.req.query && res.req.query.v) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // ---------- Sessions ----------
@@ -142,17 +165,25 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// Categories for the nav dropdown
+// Categories for the nav dropdown.
+// Every page needs them but they hardly ever change, so they're kept in
+// memory for a minute instead of asking the database on every click.
+const NAV_CACHE_MS = 60 * 1000;
+let navCache = { rows: null, at: 0 };
+
 app.use(async (req, res, next) => {
   try {
-    const [cats] = await pool.query(`
-      SELECT c.id, c.name, COUNT(p.id) AS product_count
-      FROM categories c
-      LEFT JOIN products p ON p.category_id = c.id AND p.is_active = TRUE
-      GROUP BY c.id, c.name
-      ORDER BY c.name
-    `);
-    res.locals.navCategories = cats;
+    if (!navCache.rows || Date.now() - navCache.at > NAV_CACHE_MS) {
+      const [cats] = await pool.query(`
+        SELECT c.id, c.name, COUNT(p.id) AS product_count
+        FROM categories c
+        LEFT JOIN products p ON p.category_id = c.id AND p.is_active = TRUE
+        GROUP BY c.id, c.name
+        ORDER BY c.name
+      `);
+      navCache = { rows: cats, at: Date.now() };
+    }
+    res.locals.navCategories = navCache.rows;
   } catch (err) {
     // Leave the default of []
   }

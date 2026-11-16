@@ -2,7 +2,7 @@
 
 An online clothing store I built from scratch as a portfolio project. You can browse clothes, add them to a cart, pay by card, and track your order. There's also an admin side for running the shop: adding products, managing stock and handling orders.
 
-**Live site:** coming soon
+**Live site:** [deniseclothingstore.com](https://deniseclothingstore.com)
 
 <!-- TODO: replace the line above with the link once it's deployed -->
 
@@ -126,7 +126,7 @@ This builds its own separate test database, so it never touches your real one. S
 
 ## How I built this
 
-I used Claude, an AI assistant, a lot on this project. It explained concepts I hadn't learned yet (webhooks, CSRF, transactions), suggested ways to structure things, wrote a lot of the code with me, and helped track down bugs. I decided what the site should do and how it should behave, tested each feature as it was added, and went back to understand the parts I didn't get at first. 
+I used Claude, an AI assistant, a lot on this project. It explained concepts I hadn't learned yet (webhooks, CSRF, transactions), suggested ways to structure things, wrote a lot of the code with me, and helped track down bugs. I decided what the site should do and how it should behave, tested each feature as it was added, and went back to understand the parts I didn't get at first.
 
 The [DECISIONS](docs/DECISIONS.md) page is the best place to see what I learned. Every decision on it is one I can explain.
 
