@@ -13,12 +13,10 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const router = express.Router();
 
-// ============================================================
 // Load the cart and check it can be bought.
-// ------------------------------------------------------------
 // Used by the page and by the submit, so both apply the same
 // rules. Returns null after redirecting if the cart isn't ready.
-// ============================================================
+
 async function loadCheckoutCart(req, res) {
   const cart = await getOrCreateCart(req);
   const items = await getCartItems(cart.id);
@@ -45,12 +43,11 @@ async function loadCheckoutCart(req, res) {
   return { items, subtotal, total: subtotal + SHIPPING_FEE };
 }
 
-// ============================================================
+
 // Draw the checkout page.
-// ------------------------------------------------------------
 // Also used when the submitted form has a problem, so the page
 // comes back with what they typed instead of an empty form.
-// ============================================================
+
 async function renderCheckout(req, res, checkout, form = {}) {
   const user = req.session.user;
   const addresses = await listAddresses(user.id);
@@ -89,7 +86,7 @@ router.get('/checkout', requireLogin, async (req, res) => {
   }
 });
 
-// --- Create the order and hand off to Stripe (login required) ---
+// Create the order and hand off to Stripe (login required) 
 router.post('/checkout/session', requireLogin, async (req, res) => {
   const userId = req.session.user.id;
   const email = String(req.body.email || '').trim().toLowerCase();
@@ -105,7 +102,7 @@ router.post('/checkout/session', requireLogin, async (req, res) => {
     return res.status(500).render('errors/500', { title: 'Something went wrong' });
   }
 
-  // ----- Work out where it's going, before touching the database -----
+  // Work out where it's going, before touching the database 
   let shippingName;
   let shippingAddress;
   let addressToSave = null;
@@ -147,7 +144,7 @@ router.post('/checkout/session', requireLogin, async (req, res) => {
     return res.status(500).render('errors/500', { title: 'Something went wrong' });
   }
 
-  // ----- Write the order, then hand off to Stripe -----
+  // Write the order, then hand off to Stripe 
   const { items, subtotal, total } = checkout;
   const connection = await pool.getConnection();
   try {

@@ -9,7 +9,7 @@ const { sendPasswordReset } = require('../lib/mailer');
 
 const router = express.Router();
 
-// bcrypt work factor. 12 is slow on purpose — roughly a quarter
+// bcrypt work factor. 12 is slow on purpose, roughly a quarter
 // of a second per hash. Users don't notice; someone brute-forcing
 // a stolen database very much does.
 const BCRYPT_ROUNDS = 12;
@@ -21,12 +21,9 @@ const RESET_LIMIT_PER_ACCOUNT = 3;
 // How long a reset link stays valid
 const RESET_TOKEN_MINUTES = 60;
 
-// ============================================================
 // Shared: start a session, merge the guest cart, redirect
-// ------------------------------------------------------------
 // Used by register, login and the Google callback so all three
 // behave identically.
-// ============================================================
 async function startSession(req, res, user, fallback = '/') {
   req.session.user = {
     id: user.id,
@@ -60,9 +57,7 @@ async function startSession(req, res, user, fallback = '/') {
   });
 }
 
-// ============================================================
 // REGISTER
-// ============================================================
 router.get('/register', (req, res) => {
   if (req.session.user) return res.redirect('/');
   res.render('auth/register', { title: 'Create an account', error: null, values: {} });
@@ -117,9 +112,7 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// ============================================================
 // LOGIN
-// ============================================================
 router.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/');
   res.render('auth/login', { title: 'Log in', error: null, values: {} });
@@ -158,12 +151,8 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// ============================================================
+
 // LOGOUT
-// ------------------------------------------------------------
-// POST, not GET. A GET logout can be fired by any <img> tag on
-// any site, and CSRF protection doesn't apply to GET.
-// ============================================================
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     // Must match the `key` given to session() in server.js
@@ -172,14 +161,7 @@ router.post('/logout', (req, res) => {
   });
 });
 
-// ============================================================
 // GOOGLE OAUTH
-// ------------------------------------------------------------
-// session: false — Passport's own session handling is switched
-// off because this app manages req.session.user itself. Letting
-// both run would give two sources of truth.
-// The strategy itself is configured in lib/passport.js.
-// ============================================================
 router.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
@@ -201,9 +183,7 @@ router.get('/auth/google/callback',
   }
 );
 
-// ============================================================
 // FORGOT PASSWORD
-// ============================================================
 router.get('/forgot-password', (req, res) => {
   res.render('auth/forgot-password', { title: 'Reset your password', error: null });
 });
@@ -268,17 +248,8 @@ router.post('/forgot-password', async (req, res, next) => {
   }
 });
 
-// ============================================================
+
 // RESET PASSWORD
-// ------------------------------------------------------------
-// The database stores a SHA-256 hash of the token, never the token.
-// If the database leaks, the hashes are useless for logging in.
-//
-// SHA-256 here, bcrypt for passwords — that difference is on
-// purpose. bcrypt is slow to defend weak, guessable passwords.
-// A 32-byte random token has nothing to guess, so slow hashing
-// buys nothing and only makes every reset click sluggish.
-// ============================================================
 async function findValidToken(rawToken) {
   const [[row]] = await pool.query(`
     SELECT pr.*, u.id AS uid, u.name, u.email, u.role, u.profile_photo_url

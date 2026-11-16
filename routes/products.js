@@ -7,16 +7,7 @@ const router = express.Router();
 
 const PER_PAGE = 12;
 
-// ============================================================
 // SORT WHITELIST
-// ------------------------------------------------------------
-// ORDER BY cannot be parameterised — you can't write
-// "ORDER BY ?" and pass a column name, because ? is only ever
-// a VALUE. So the only safe way to let users sort is to look
-// their choice up in a fixed table. Anything not in this object
-// falls back to 'newest'. That's the whole SQL-injection defence
-// for sorting.
-// ============================================================
 const SORTS = {
   newest:     { label: 'Newest first',        sql: 'p.created_at DESC' },
   price_asc:  { label: 'Price: low to high',  sql: 'p.price ASC' },
@@ -25,9 +16,7 @@ const SORTS = {
   rating:     { label: 'Best rated',          sql: 'avg_rating DESC, review_count DESC' }
 };
 
-// ============================================================
-// PRODUCT LISTING  —  GET /shop
-// ============================================================
+// PRODUCT LISTING  
 router.get('/shop', async (req, res, next) => {
   try {
     const q = (req.query.q || '').trim();
@@ -73,7 +62,7 @@ router.get('/shop', async (req, res, next) => {
 
     const whereSql = where.join(' AND ');
 
-    // --- how many match, for the pager ---
+    // how many match, for the pager 
     const [[{ total }]] = await pool.query(`
       SELECT COUNT(*) AS total
       FROM products p
@@ -85,7 +74,7 @@ router.get('/shop', async (req, res, next) => {
     const currentPage = Math.min(page, totalPages);
     const offset = (currentPage - 1) * PER_PAGE;
 
-    // --- the page itself ---
+    // the page itself 
     const [products] = await pool.query(`
       SELECT
         p.id, p.name, p.slug, p.price, p.department, p.created_at,
@@ -156,9 +145,7 @@ router.get('/shop', async (req, res, next) => {
   }
 });
 
-// ============================================================
-// SINGLE PRODUCT  —  GET /products/:slug
-// ============================================================
+// SINGLE PRODUCT 
 router.get('/products/:slug', async (req, res, next) => {
   try {
     const [[product]] = await pool.query(`
@@ -216,9 +203,7 @@ router.get('/products/:slug', async (req, res, next) => {
   }
 });
 
-// ============================================================
 // POST A REVIEW  —  POST /products/:slug/reviews
-// ============================================================
 router.post('/products/:slug/reviews', requireLogin, async (req, res, next) => {
   try {
     const rating = parseInt(req.body.rating, 10);
@@ -260,9 +245,7 @@ router.post('/products/:slug/reviews', requireLogin, async (req, res, next) => {
   }
 });
 
-// ============================================================
 // DELETE MY REVIEW  —  POST /products/:slug/reviews/delete
-// ============================================================
 router.post('/products/:slug/reviews/delete', requireLogin, async (req, res, next) => {
   try {
     const [[product]] = await pool.query(

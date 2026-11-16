@@ -22,9 +22,7 @@ router.use(async (req, res, next) => {
   next();
 });
 
-// ============================================================
 // Dashboard
-// ============================================================
 router.get('/', async (req, res) => {
   try {
     const [[stats]] = await pool.query(`
@@ -99,9 +97,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ============================================================
 // Orders
-// ============================================================
 router.get('/orders', async (req, res) => {
   try {
     const { status } = req.query;
@@ -179,9 +175,7 @@ router.post('/orders/:id/status', async (req, res) => {
   }
 });
 
-// ============================================================
 // Products
-// ============================================================
 router.get('/products', async (req, res) => {
   try {
     const [products] = await pool.query(`
@@ -206,10 +200,7 @@ router.get('/products', async (req, res) => {
   }
 });
 
-// ============================================================
 // New product
-// ============================================================
-
 // Colours already used in the shop, offered as suggestions so the
 // same colour gets the same spelling everywhere
 async function colourSuggestions() {
@@ -237,13 +228,11 @@ async function renderNewProduct(res, { status = 200, product = null, error = nul
     colourSuggestions: await colourSuggestions()
   });
 }
-
-// ------------------------------------------------------------
 // Read the size/colour/stock rows from the new-product form.
 // Each row arrives as three repeated fields; one row arrives as
 // plain strings and several as arrays, so [].concat() evens that out.
 // Completely empty rows are skipped.
-// ------------------------------------------------------------
+
 function readVariantRows(body) {
   const colours = [].concat(body.variant_color ?? []);
   const sizes   = [].concat(body.variant_size ?? []);
@@ -421,9 +410,7 @@ router.post('/products/:id', async (req, res) => {
   }
 });
 
-// ============================================================
 // Variants
-// ============================================================
 router.post('/products/:id/variants', async (req, res) => {
   const productId = Number(req.params.id);
   const back = `/admin/products/${productId}/edit`;
@@ -524,9 +511,7 @@ router.post('/products/:id/variants/:variantId/delete', async (req, res) => {
   }
 });
 
-// ============================================================
 // Images
-// ============================================================
 router.post('/products/:id/images', upload.single('image'), async (req, res) => {
   const { alt_text, sort_order, is_primary, image_url } = req.body;
   const productId = req.params.id;
@@ -658,9 +643,7 @@ router.post('/products/:id/images/:imageId/delete', async (req, res) => {
   }
 });
 
-// ============================================================
 // Review moderation
-// ============================================================
 router.post('/reviews/:id/delete', async (req, res) => {
   try {
     await pool.query('DELETE FROM reviews WHERE id = ?', [req.params.id]);

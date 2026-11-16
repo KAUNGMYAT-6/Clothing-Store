@@ -1,21 +1,4 @@
-/* ============================================================
-   DeniseClothing — front-end behaviour
-   ------------------------------------------------------------
-   Everything lives in one file and runs after the DOM is ready.
-   Nothing here is required for the site to work: if JavaScript
-   is off, every form still submits and every link still works.
-   JS only makes things nicer.
-
-   The Content-Security-Policy in server.js blocks inline event
-   handlers (onclick="...", onmouseover="..."), so ALL behaviour
-   has to live in this file and hook onto data- attributes.
-   ============================================================ */
-
 document.addEventListener('DOMContentLoaded', function () {
-
-  // ============================================================
-  // 1. Flash messages — dismiss button + auto-fade
-  // ============================================================
   document.querySelectorAll('.flash').forEach(function (flash) {
     const close = flash.querySelector('[data-flash-close]');
 
@@ -37,13 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
 
-  // ============================================================
-  // 2. Reveal on scroll
-  // ------------------------------------------------------------
-  // IntersectionObserver tells us when an element scrolls into
-  // view. Cheaper than listening to every scroll event, because
-  // the browser does the maths itself.
-  // ============================================================
+// Reveal elements as they scroll into view. 
   const revealItems = document.querySelectorAll('.reveal');
 
   // Respect the OS "reduce motion" setting — some people get
@@ -72,17 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-  // ============================================================
-  // 3. Quantity steppers
-  // ------------------------------------------------------------
-  // Two jobs depending on where the stepper is:
-  //   - product page: just change the number
-  //   - cart page:    change the number AND submit the form
-  //
-  // On the cart page we debounce. If someone taps "+" five times
-  // quickly we don't want five round-trips to the server — we
-  // wait until they stop clicking, then send once.
-  // ============================================================
+// Stepper buttons for quantity inputs
   document.querySelectorAll('[data-stepper]').forEach(function (stepper) {
     const input = stepper.querySelector('input[type="number"]');
     if (!input) return;
@@ -159,15 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
 
-  // ============================================================
-  // 3b. Product page: quantity follows the chosen size's stock
-  // ------------------------------------------------------------
-  // Each <option> carries data-stock. Picking one sets the quantity
-  // limit to that stock (capped per order), lowers the number if
-  // it's now too high, and explains why + stopped working.
-  // The server checks again in routes/cart.js, so this is for
-  // convenience, not security.
-  // ============================================================
+// 3. Quantity hints on product page
   document.querySelectorAll('[data-qty-for]').forEach(function (stepper) {
     const select = document.getElementById(stepper.dataset.qtyFor);
     const input = stepper.querySelector('input[type="number"]');
@@ -211,14 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
 
-  // ============================================================
-  // 4. Cart badge bump
-  // ------------------------------------------------------------
-  // The badge count is rendered by the server. We compare it to
-  // what it was on the last page view (kept in sessionStorage)
-  // and animate only when it actually changed, so it doesn't
-  // bounce on every single page load.
-  // ============================================================
+// cart count badge: animate when it changes
   const badge = document.querySelector('[data-cart-count]');
   if (badge) {
     const current = badge.textContent.trim();
@@ -238,13 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-  // ============================================================
-  // 5. Password matching
-  // ------------------------------------------------------------
-  // Live feedback on register and reset-password forms.
-  // This is convenience only — server.js checks both fields
-  // again, because anything in the browser can be bypassed.
-  // ============================================================
+// password match check on signup and change-password forms
   const pwForm = document.querySelector('[data-password-match]');
   if (pwForm) {
     const password = pwForm.querySelector('[data-password]');
@@ -284,13 +230,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-  // ============================================================
-  // 6. Live product preview (admin new-product form)
-  // ------------------------------------------------------------
-  // Mirrors what the admin types into a fake product card, so
-  // they can see roughly how it will look in the shop before
-  // they save anything.
-  // ============================================================
+// 6. Live preview of product form
   const previewForm = document.querySelector('[data-live-preview]');
   if (previewForm) {
     const out = {
@@ -336,14 +276,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // ============================================================
-  // 7. Checkout address picker
-  // ------------------------------------------------------------
-  // Shows the new-address fields only when "Use a new address"
-  // is picked, and makes them required only then. Otherwise the
-  // browser would refuse to submit empty fields the customer
-  // can't even see.
-  // ============================================================
+// 7. Address form: show/hide the new-address fields
   const addressChoices = document.querySelectorAll('[data-address-choice]');
   const newAddress = document.querySelector('[data-new-address]');
 
@@ -365,13 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-  // ============================================================
-  // 8. Confirm before destructive buttons
-  // ------------------------------------------------------------
-  // <form data-confirm="Delete this address?"> asks first. The
-  // CSP blocks onsubmit="return confirm(...)", which is why this
-  // lives here instead of in the HTML.
-  // ============================================================
+// 8. Confirm before submitting a form
   document.querySelectorAll('form[data-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (e) {
       if (!window.confirm(form.dataset.confirm)) e.preventDefault();
@@ -379,13 +306,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
 
-  // ============================================================
-  // 9. Size and stock rows (admin new-product form)
-  // ------------------------------------------------------------
-  // Three rows are always there, so the form works without
-  // JavaScript. This adds "Add another row" and the remove
-  // buttons, and keeps a running total in the preview card.
-  // ============================================================
+// 9. Add/remove variant rows on the product form
   const variantRows = document.querySelector('[data-variant-rows]');
   const variantTemplate = document.querySelector('[data-variant-template]');
 

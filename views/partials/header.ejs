@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <%# The design is light only. Without this, some phone browsers force their own
+      dark mode on the page and turn the colours murky. %>
+  <meta name="color-scheme" content="only light">
   <title><%= typeof title !== 'undefined' ? title + ' · DeniseClothing' : 'DeniseClothing' %></title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,8 +72,11 @@
 
           <% if (user) { %>
             <div class="dropdown">
+              <%# data-bs-display="static" lets the menu's position follow the
+                  classes below: left-aligned on phones (where this button sits on
+                  the left inside the ☰ menu), right-aligned on wider screens %>
               <button class="nav-avatar" type="button" id="userMenu"
-                      data-bs-toggle="dropdown" aria-expanded="false"
+                      data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false"
                       aria-label="Account menu">
                 <% if (user.profile_photo_url) { %>
                   <img src="<%= user.profile_photo_url %>" alt="">
@@ -79,7 +85,7 @@
                 <% } %>
               </button>
 
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+              <ul class="dropdown-menu dropdown-menu-start dropdown-menu-lg-end" aria-labelledby="userMenu">
                 <li class="dropdown-header">
                   <div class="fw-semibold text-dark"><%= user.name %></div>
                   <div class="text-mute text-truncate" style="font-size:.76rem; max-width:180px">

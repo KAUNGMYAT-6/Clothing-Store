@@ -1,11 +1,4 @@
-<%#
-  Address inputs shared by the address book and checkout.
-  Locals:
-    values       what to prefill (an address row, or what was just submitted)
-    conditional  true at checkout when saved addresses exist: the fields are
-                 only required when "Use a new address" is picked, so app.js
-                 switches `required` on and off instead of it being fixed here
-%>
+
 <%
   const v = locals.values || {};
   // Fixed strings only, never user input, so printing them raw is safe

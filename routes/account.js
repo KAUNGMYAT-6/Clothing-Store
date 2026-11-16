@@ -81,9 +81,8 @@ router.get('/orders', async (req, res, next) => {
   }
 });
 
-// ============================================================
+
 // ONE ORDER
-// ============================================================
 router.get('/orders/:id', async (req, res, next) => {
   try {
     const orderId = parseInt(req.params.id, 10);
@@ -132,9 +131,7 @@ router.get('/orders/:id', async (req, res, next) => {
   }
 });
 
-// ============================================================
 // SETTINGS PAGE
-// ============================================================
 router.get('/settings', async (req, res, next) => {
   try {
     const [[account]] = await pool.query(
@@ -156,9 +153,8 @@ router.get('/settings', async (req, res, next) => {
   }
 });
 
-// ============================================================
+
 // NAME AND EMAIL
-// ============================================================
 router.post('/settings/profile', async (req, res, next) => {
   try {
     const name = (req.body.name || '').trim();
@@ -205,9 +201,7 @@ router.post('/settings/profile', async (req, res, next) => {
   }
 });
 
-// ============================================================
 // PASSWORD
-// ============================================================
 router.post('/settings/password', async (req, res, next) => {
   try {
     const { current_password, new_password, confirm_password } = req.body;
@@ -247,9 +241,7 @@ router.post('/settings/password', async (req, res, next) => {
   }
 });
 
-// ============================================================
 // PROFILE PHOTO
-// ============================================================
 router.post('/settings/photo', upload.single('photo'), async (req, res, next) => {
   try {
     if (!req.file) {
@@ -319,15 +311,12 @@ router.post('/settings/photo/delete', async (req, res, next) => {
   }
 });
 
-// ============================================================
 // DELETE ACCOUNT
-// ------------------------------------------------------------
 // The user row goes. What happens to everything pointing at it
 // was decided in the schema:
 //   addresses  CASCADE   — go with them
 //   reviews    CASCADE   — they carry the author's name
 //   orders     SET NULL  — financial records, must survive
-// ============================================================
 router.post('/delete', async (req, res, next) => {
   try {
     const [[account]] = await pool.query(
@@ -359,10 +348,7 @@ router.post('/delete', async (req, res, next) => {
   }
 });
 
-// ============================================================
 // ADDRESS BOOK
-// ============================================================
-
 // Turns "/addresses/12/edit" into 12, or null for anything that
 // isn't a plain whole number
 function addressIdFrom(req) {

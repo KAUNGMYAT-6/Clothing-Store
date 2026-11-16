@@ -44,13 +44,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ============================================================
 // Privacy policy and terms
-// ------------------------------------------------------------
-// Google requires both, on the site's own domain, before an app
-// using "Sign in with Google" can be published for everyone.
-// When the wording changes, update LEGAL_UPDATED too.
-// ============================================================
 const LEGAL_UPDATED = '14 November 2026';
 
 function legalPage(view, title) {

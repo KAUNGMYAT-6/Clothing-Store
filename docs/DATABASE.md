@@ -170,12 +170,3 @@ Most of these are also checked in the code, but having the database enforce them
 - `products.price >= 0`
 
 **Money** is stored as `DECIMAL(10,2)` everywhere. `FLOAT` can't store values like 0.10 exactly, and those small errors add up in totals.
-
-## Setting it up
-
-```bash
-mysql -u root -p -e "CREATE DATABASE denise CHARACTER SET utf8mb4"
-mysql -u root -p denise < db/schema.sql
-```
-
-`utf8mb4` lets names and reviews contain any character, including emoji. Plain `utf8` in MySQL can't store emoji.
